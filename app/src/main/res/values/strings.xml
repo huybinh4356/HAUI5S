@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">My Application</string>
+
+    <string-array name="chuyen_nganh_array">
+        <item>Công nghệ thông tin (CNTT)</item>
+        <item>Kỹ thuật phần mềm (KTPM)</item>
+        <item>Hệ thống thông tin (HTTT)</item>
+        <item>Khoa học máy tính (KHMT)</item>
+        <item>Kỹ thuật máy tính (KTMT)</item>
+        <item>Công nghệ KT Điện, Điện tử (DDT)</item>
+        <item>Tự động hóa (TDH)</item>
+        <item>Công nghệ KT Cơ khí (CK)</item>
+        <item>Công nghệ KT Ô tô (OTO)</item>
+        <item>Kế toán (KT)</item>
+        <item>Kiểm toán (KiT)</item>
+        <item>Quản trị kinh doanh (QTKD)</item>
+        <item>Tài chính - Ngân hàng (TCNH)</item>
+        <item>Ngôn ngữ Anh (NNA)</item>
+        <item>Du lịch (DL)</item>
+    </string-array>
+
+    <string-array name="khoa_array">
+        <item>K10</item>
+        <item>K11</item>
+        <item>K12</item>
+        <item>K13</item>
+        <item>K14</item>
+        <item>K15</item>
+        <item>K16</item>
+        <item>K17</item>
+        <item>K18</item>
+        <item>K19</item>
+        <item>K20</item>
+    </string-array>
+</resources>

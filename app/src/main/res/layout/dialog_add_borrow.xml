@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="THÊM PHIẾU MƯỢN"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="#003366"
+        android:layout_marginBottom="20dp"/>
+
+    <EditText
+        android:id="@+id/etStudentName"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Tên Sinh Viên"
+        android:background="@drawable/bg_rounded_input"
+        android:padding="10dp"
+        android:layout_marginBottom="10dp"/>
+
+    <EditText
+        android:id="@+id/etToolName"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Dụng cụ mượn (Ví dụ: Chổi)"
+        android:background="@drawable/bg_rounded_input"
+        android:padding="10dp"
+        android:layout_marginBottom="20dp"/>
+
+    <Button
+        android:id="@+id/btnSaveBorrow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="LƯU PHIẾU"
+        android:backgroundTint="#00BFFF"
+        android:textColor="#FFFFFF"/>
+
+</LinearLayout>

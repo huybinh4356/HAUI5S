@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5">
+
+    <LinearLayout
+        android:id="@+id/headerCalendar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="7"
+        android:background="@color/white"
+        android:elevation="4dp"
+        android:padding="5dp">
+
+        <TextView android:id="@+id/tvT2" android:layout_weight="1" android:text="T2\n1" android:gravity="center" android:padding="10dp" android:layout_width="0dp" android:layout_height="wrap_content" android:textColor="#000"/>
+        <TextView android:id="@+id/tvT3" android:layout_weight="1" android:text="T3\n2" android:gravity="center" android:padding="10dp" android:layout_width="0dp" android:layout_height="wrap_content" android:textColor="#000"/>
+        <TextView android:id="@+id/tvT4" android:layout_weight="1" android:text="T4\n3" android:gravity="center" android:padding="10dp" android:layout_width="0dp" android:layout_height="wrap_content" android:textColor="#000"/>
+        <TextView android:id="@+id/tvT5" android:layout_weight="1" android:text="T5\n4" android:gravity="center" android:padding="10dp" android:layout_width="0dp" android:layout_height="wrap_content" android:textColor="#000"/>
+        <TextView android:id="@+id/tvT6" android:layout_weight="1" android:text="T6\n5" android:gravity="center" android:padding="10dp" android:layout_width="0dp" android:layout_height="wrap_content" android:textColor="#000"/>
+        <TextView android:id="@+id/tvT7" android:layout_weight="1" android:text="T7\n6" android:gravity="center" android:padding="10dp" android:layout_width="0dp" android:layout_height="wrap_content" android:textColor="#000"/>
+        <TextView android:id="@+id/tvCN" android:layout_weight="1" android:text="CN\n7" android:gravity="center" android:padding="10dp" android:layout_width="0dp" android:layout_height="wrap_content" android:textColor="#000"/>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvBorrowList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/headerCalendar"
+        android:paddingBottom="100dp"
+        android:clipToPadding="false"/>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="103dp"
+        android:backgroundTint="#00BFFF"
+        android:src="@android:drawable/ic_input_add"
+        app:tint="@color/white" />
+</RelativeLayout>
