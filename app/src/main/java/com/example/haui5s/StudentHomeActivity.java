@@ -4,11 +4,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.MenuItem;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
@@ -22,17 +20,15 @@ public class StudentHomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_student_home);
 
-        // 1. Nhận mã sinh viên (Ưu tiên Intent, nếu null thì lấy từ Session)
         currentMaSV = getIntent().getStringExtra("student_code");
         if (currentMaSV == null || currentMaSV.isEmpty()) {
             SharedPreferences prefs = getSharedPreferences("UserSession", Context.MODE_PRIVATE);
             currentMaSV = prefs.getString("masv", "");
         }
 
-        // 2. Ánh xạ đúng ID trong activity_student_home.xml
         bottomNav = findViewById(R.id.bottom_nav_student);
 
-        // 3. Xử lý sự kiện Menu
+        // Xử lý sự kiện bấm Menu (4 mục)
         bottomNav.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -40,26 +36,18 @@ public class StudentHomeActivity extends AppCompatActivity {
                 int id = item.getItemId();
 
                 if (id == R.id.nav_home_student) {
-                    // Nếu chưa có HomeFragment, dùng tạm ToolsFragment
-                    selectedFragment = new ToolsFragment();
+                    selectedFragment = new HomeFragment();
                 }
                 else if (id == R.id.nav_calendar_student) {
-                    // Chức năng Lịch/Mượn đồ
-                    selectedFragment = new ToolsFragment();
-//                }
-//                else if (id == R.id.nav_report_student) {
-//                    // --- QUAN TRỌNG: CHUYỂN SANG MÀN HÌNH BÁO CÁO (Activity) ---
-////                    Intent intent = new Intent(StudentHomeActivity.this, ReportActivity.class);
-//                    intent.putExtra("student_code", currentMaSV);
-//                    startActivity(intent);
-//                    return false; // Không đổi trạng thái tab, giữ nguyên tab hiện tại
+                    selectedFragment = new CalendarFragment();
+                }
+                else if (id == R.id.nav_report_student) {
+                    selectedFragment = new ReportFragment(); // Gọi màn hình Báo cáo 5S
                 }
                 else if (id == R.id.nav_profile_student) {
-                    // Nếu chưa có ProfileFragment, dùng tạm ToolsFragment tránh lỗi
-                    selectedFragment = new ToolsFragment();
+                    selectedFragment = new ProfileFragment();
                 }
 
-                // Thay thế Fragment vào khung chứa
                 if (selectedFragment != null) {
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_container_student, selectedFragment)
@@ -69,17 +57,15 @@ public class StudentHomeActivity extends AppCompatActivity {
             }
         });
 
-        // 4. Mặc định chạy màn hình đầu tiên khi mở
+        // Mặc định mở Trang chủ
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container_student, new ToolsFragment())
+                    .replace(R.id.fragment_container_student, new HomeFragment())
                     .commit();
-            // Đánh dấu icon Home (hoặc Calendar) sáng lên
             bottomNav.setSelectedItemId(R.id.nav_home_student);
         }
     }
 
-    // Hàm public để các Fragment con có thể lấy Mã SV nếu cần
     public String getMyMaSV() {
         return currentMaSV;
     }

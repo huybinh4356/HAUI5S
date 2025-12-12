@@ -30,15 +30,14 @@ public class JDBCService {
         }
     }
 
-    // --- CÁC INTERFACE CALLBACK ---
     public interface SimpleCallback { void onResult(boolean success); }
     public interface LoginCallback { void onLoginResult(boolean success); }
     public interface UserInfoCallback { void onInfoLoaded(UserInfoModel user); }
     public interface BorrowListCallback { void onListLoaded(List<BorrowModel> list); }
     public interface ScheduleListCallback { void onLoaded(List<ScheduleModel> schedules); }
     public interface ReportListCallback { void onLoaded(List<ReportModel> list); }
+    public interface SearchUserCallback { void onFound(List<UserInfoModel> list); }
 
-    // --- 1. XỬ LÝ USER (Đăng nhập/Đăng ký/Lấy tin) ---
     public static void getUserInfo(String userCode, UserInfoCallback callback) {
         executor.execute(() -> {
             UserInfoModel user = null;
@@ -72,13 +71,20 @@ public class JDBCService {
         });
     }
 
-    public static void insertData(String ma, String pass, String ten, String nganh, String lop, String khoa, String sdt, String email, SimpleCallback callback) {
+    public static void insertData(String ma, String pass, String ten, String nganh, String lop, String khoa, String sdt, String email, int role, SimpleCallback callback) {
         executor.execute(() -> {
             boolean success = false;
-            String SQL = "INSERT INTO users (user_code, password, full_name, major, class, course, phone, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String SQL = "INSERT INTO users (user_code, password, full_name, major, class, course, phone, email, role_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
-                stmt.setString(1, ma); stmt.setString(2, pass); stmt.setString(3, ten); stmt.setString(4, nganh);
-                stmt.setString(5, lop); stmt.setString(6, khoa); stmt.setString(7, sdt); stmt.setString(8, email);
+                stmt.setString(1, ma);
+                stmt.setString(2, pass);
+                stmt.setString(3, ten);
+                stmt.setString(4, nganh);
+                stmt.setString(5, lop);
+                stmt.setString(6, khoa);
+                stmt.setString(7, sdt);
+                stmt.setString(8, email);
+                stmt.setInt(9, role);
                 success = stmt.executeUpdate() > 0;
             } catch (SQLException e) { e.printStackTrace(); }
             final boolean finalSuccess = success;
@@ -99,11 +105,9 @@ public class JDBCService {
         });
     }
 
-    // --- 2. XỬ LÝ MƯỢN TRẢ (Cập nhật có student_code) ---
     public static void getBorrowListByDate(String date, BorrowListCallback callback) {
         executor.execute(() -> {
             List<BorrowModel> list = new ArrayList<>();
-            // Đã thêm cột student_code vào SQL
             String SQL = "SELECT borrow_id, student_code, student_name, tool_name, borrow_date, status FROM borrow_list WHERE borrow_date LIKE ?";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
                 stmt.setString(1, date + "%");
@@ -111,7 +115,7 @@ public class JDBCService {
                     while (rs.next()) {
                         list.add(new BorrowModel(
                                 rs.getInt("borrow_id"),
-                                rs.getString("student_code"), // Cột mới thêm
+                                rs.getString("student_code"),
                                 rs.getString("student_name"),
                                 rs.getString("tool_name"),
                                 rs.getString("borrow_date"),
@@ -129,7 +133,11 @@ public class JDBCService {
             boolean success = false;
             String SQL = "INSERT INTO borrow_list (student_code, student_name, tool_name, borrow_date, status) VALUES (?, ?, ?, ?, ?)";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
-                stmt.setString(1, maSv); stmt.setString(2, name); stmt.setString(3, toolList); stmt.setString(4, date); stmt.setInt(5, status);
+                stmt.setString(1, maSv);
+                stmt.setString(2, name);
+                stmt.setString(3, toolList);
+                stmt.setString(4, date);
+                stmt.setInt(5, status);
                 success = stmt.executeUpdate() > 0;
             } catch (SQLException e) { e.printStackTrace(); }
             final boolean finalSuccess = success;
@@ -142,7 +150,8 @@ public class JDBCService {
             boolean success = false;
             String SQL = "UPDATE borrow_list SET status = ? WHERE borrow_id = ?";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
-                stmt.setInt(1, newStatus); stmt.setInt(2, borrowId);
+                stmt.setInt(1, newStatus);
+                stmt.setInt(2, borrowId);
                 success = stmt.executeUpdate() > 0;
             } catch (SQLException e) { e.printStackTrace(); }
             final boolean finalSuccess = success;
@@ -150,14 +159,17 @@ public class JDBCService {
         });
     }
 
-    // --- 3. XỬ LÝ LỊCH TRỰC NHẬT ---
     public static void insertCleaningSchedule(String code, String name, String classInfo, String area, String note, String dateTime, SimpleCallback callback) {
         executor.execute(() -> {
             boolean success = false;
             String SQL = "INSERT INTO cleaning_schedule (person_code, person_name, class_info, area, note, schedule_date, status) VALUES (?, ?, ?, ?, ?, STR_TO_DATE(?, '%d/%m/%Y %H:%i'), 0)";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
-                stmt.setString(1, code); stmt.setString(2, name); stmt.setString(3, classInfo);
-                stmt.setString(4, area); stmt.setString(5, note); stmt.setString(6, dateTime);
+                stmt.setString(1, code);
+                stmt.setString(2, name);
+                stmt.setString(3, classInfo);
+                stmt.setString(4, area);
+                stmt.setString(5, note);
+                stmt.setString(6, dateTime);
                 success = stmt.executeUpdate() > 0;
             } catch (SQLException e) { e.printStackTrace(); }
             final boolean finalSuccess = success;
@@ -176,14 +188,16 @@ public class JDBCService {
         });
     }
 
-    // --- 4. XỬ LÝ CHẤM ĐIỂM 5S (ReportModel) ---
     public static void insertReport(String code, String name, String area, String note, String image, SimpleCallback callback) {
         executor.execute(() -> {
             boolean success = false;
             String SQL = "INSERT INTO report_log (reporter_code, reporter_name, area, note, image_url, report_timestamp, status) VALUES (?, ?, ?, ?, ?, NOW(), 0)";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
-                stmt.setString(1, code); stmt.setString(2, name); stmt.setString(3, area);
-                stmt.setString(4, note); stmt.setString(5, image);
+                stmt.setString(1, code);
+                stmt.setString(2, name);
+                stmt.setString(3, area);
+                stmt.setString(4, note);
+                stmt.setString(5, image);
                 success = stmt.executeUpdate() > 0;
             } catch (SQLException e) { e.printStackTrace(); }
             final boolean finalSuccess = success;
@@ -225,13 +239,45 @@ public class JDBCService {
             int avg = Math.round((s1 + s2 + s3 + s4 + s5) / 5.0f);
             String SQL = "UPDATE report_log SET status = 1, handler_code = ?, resolution_note = ?, resolution_timestamp = NOW(), score_s1 = ?, score_s2 = ?, score_s3 = ?, score_s4 = ?, score_s5 = ?, final_evaluation = ? WHERE report_id = ?";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
-                stmt.setString(1, handlerCode); stmt.setString(2, resolutionNote);
-                stmt.setInt(3, s1); stmt.setInt(4, s2); stmt.setInt(5, s3); stmt.setInt(6, s4); stmt.setInt(7, s5);
-                stmt.setInt(8, avg); stmt.setInt(9, reportId);
+                stmt.setString(1, handlerCode);
+                stmt.setString(2, resolutionNote);
+                stmt.setInt(3, s1);
+                stmt.setInt(4, s2);
+                stmt.setInt(5, s3);
+                stmt.setInt(6, s4);
+                stmt.setInt(7, s5);
+                stmt.setInt(8, avg);
+                stmt.setInt(9, reportId);
                 success = stmt.executeUpdate() > 0;
             } catch (SQLException e) { e.printStackTrace(); }
             final boolean finalSuccess = success;
             mainHandler.post(() -> callback.onResult(finalSuccess));
+        });
+    }
+
+    public static void searchUsers(String keyword, SearchUserCallback callback) {
+        executor.execute(() -> {
+            List<UserInfoModel> list = new ArrayList<>();
+            String SQL = "SELECT user_code, full_name, major, class, course, phone, email FROM users WHERE user_code LIKE ? OR full_name LIKE ? LIMIT 5";
+            try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
+                String searchPattern = "%" + keyword + "%";
+                stmt.setString(1, searchPattern);
+                stmt.setString(2, searchPattern);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(new UserInfoModel(
+                                rs.getString("user_code"),
+                                rs.getString("full_name"),
+                                rs.getString("major"),
+                                rs.getString("class"),
+                                rs.getString("course"),
+                                rs.getString("phone"),
+                                rs.getString("email")
+                        ));
+                    }
+                }
+            } catch (SQLException e) { e.printStackTrace(); }
+            mainHandler.post(() -> callback.onFound(list));
         });
     }
 }

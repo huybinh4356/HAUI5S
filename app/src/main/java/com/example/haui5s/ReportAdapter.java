@@ -16,6 +16,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ViewHolder
     private List<ReportModel> list;
     private OnItemClickListener listener;
 
+    // Interface để xử lý sự kiện click
     public interface OnItemClickListener {
         void onItemClick(ReportModel item);
     }
@@ -29,6 +30,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ViewHolder
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // Đảm bảo bạn đã có file layout tên là item_report.xml
         View view = LayoutInflater.from(context).inflate(R.layout.item_report, parent, false);
         return new ViewHolder(view);
     }
@@ -37,31 +39,36 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ReportModel item = list.get(position);
 
-        // Hiển thị thông tin người làm vệ sinh
+        // Hiển thị thông tin cơ bản
         holder.tvArea.setText("Khu vực: " + item.area);
         holder.tvReporter.setText("Người thực hiện: " + item.reporterName);
-        holder.tvTime.setText("Thời gian: " + item.reportTime);
         holder.tvNote.setText("Ghi chú: " + item.note);
+
+        // --- SỬA LỖI Ở ĐÂY: Dùng item.timestamp (khớp với Model) ---
+        holder.tvTime.setText("Thời gian: " + item.timestamp);
 
         // Xử lý trạng thái chấm điểm 5S
         if (item.status == 0) {
+            // Trạng thái: Chờ chấm
             holder.tvStatus.setText("Chờ chấm điểm");
             holder.tvStatus.setTextColor(Color.parseColor("#FFA500")); // Màu cam
-            holder.tvScore.setVisibility(View.GONE);
+            holder.tvScore.setVisibility(View.GONE); // Ẩn điểm đi
         } else {
+            // Trạng thái: Đã chấm
             holder.tvStatus.setText("Đã chấm điểm");
             holder.tvStatus.setTextColor(Color.parseColor("#008000")); // Màu xanh lá
-            holder.tvScore.setVisibility(View.VISIBLE);
+            holder.tvScore.setVisibility(View.VISIBLE); // Hiện điểm
             // Hiển thị điểm tổng kết
             holder.tvScore.setText("Điểm 5S: " + item.finalEvaluation + "/100");
         }
 
+        // Bắt sự kiện click vào item (để xem chi tiết hoặc chấm điểm)
         holder.itemView.setOnClickListener(v -> listener.onItemClick(item));
     }
 
     @Override
     public int getItemCount() {
-        return list.size();
+        return list != null ? list.size() : 0;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -69,6 +76,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ViewHolder
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            // Ánh xạ View (Đảm bảo ID trong item_report.xml đúng như này)
             tvArea = itemView.findViewById(R.id.tv_item_area);
             tvReporter = itemView.findViewById(R.id.tv_item_reporter);
             tvTime = itemView.findViewById(R.id.tv_item_time);

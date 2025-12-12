@@ -5,14 +5,13 @@
     android:orientation="vertical"
     android:background="#F5F5F5"
     android:gravity="center_horizontal"
-    android:padding="20dp">
-
-    <ImageView
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@drawable/ic_launcher_foreground"
-        android:background="@drawable/bg_rounded_input"
-        android:layout_marginBottom="15dp"/>
+    android:padding="20dp"
+    android:fitsSystemWindows="true"> <ImageView
+    android:layout_width="100dp"
+    android:layout_height="100dp"
+    android:src="@drawable/ic_launcher_foreground"
+    android:background="@drawable/bg_rounded_input"
+    android:layout_marginBottom="15dp"/>
 
     <TextView
         android:id="@+id/tvProfileName"

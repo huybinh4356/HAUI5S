@@ -4,51 +4,50 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="#F5F5F5"
+    android:fitsSystemWindows="true"> <androidx.core.widget.NestedScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
-    <androidx.core.widget.NestedScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:text="Lịch Trực Nhật"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#003366"
+            android:layout_marginBottom="20dp"
+            android:gravity="center"/>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Lịch Trực Nhật"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="#003366"
-                android:layout_marginBottom="20dp"
-                android:gravity="center"/>
+        <com.applandeo.materialcalendarview.CalendarView
+            android:id="@+id/calendarView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"/>
 
-            <com.applandeo.materialcalendarview.CalendarView
-                android:id="@+id/calendarView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"/>
+        <TextView
+            android:id="@+id/tvTaskInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chọn ngày để xem chi tiết"
+            android:background="@drawable/bg_rounded_input"
+            android:padding="15dp"
+            android:textSize="16sp"
+            android:textColor="#333333"/>
 
-            <TextView
-                android:id="@+id/tvTaskInfo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Chọn ngày để xem chi tiết"
-                android:background="@drawable/bg_rounded_input"
-                android:padding="15dp"
-                android:textSize="16sp"
-                android:textColor="#333333"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="100dp"/>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="100dp"/>
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddSchedule"

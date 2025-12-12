@@ -11,7 +11,6 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import com.example.haui5s.JDBCService;
 import com.google.android.material.textfield.TextInputLayout;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -95,7 +94,9 @@ public class RegisterActivity extends AppCompatActivity {
         String lop = etLop.getText().toString().trim();
         String nganh = spNganh.getSelectedItem().toString();
         String khoa = spKhoa.getSelectedItem().toString();
+
         String roleMsg;
+        int roleCode; // 0: Sinh viên, 1: Giáo viên
 
         if (cbIsTeacher.isChecked()) {
             String inputSecret = etSecretCode.getText().toString().trim();
@@ -113,6 +114,7 @@ public class RegisterActivity extends AppCompatActivity {
             nganh = "Giảng viên";
             khoa = "GV";
             roleMsg = "Giáo viên";
+            roleCode = 1; // SET ROLE LÀ 1
 
         } else {
             if (lop.isEmpty()) {
@@ -120,6 +122,7 @@ public class RegisterActivity extends AppCompatActivity {
                 return;
             }
             roleMsg = "Sinh viên";
+            roleCode = 0; // SET ROLE LÀ 0
         }
 
         if(ma.isEmpty() || ten.isEmpty() || pass.isEmpty()) {
@@ -141,6 +144,7 @@ public class RegisterActivity extends AppCompatActivity {
         final String finalTen = ten;
         final String finalSDT = sdt;
         final String finalEmail = email;
+        final int finalRoleCode = roleCode;
 
         JDBCService.checkMaSV(finalMa, exists -> {
             if(exists) {
@@ -148,7 +152,8 @@ public class RegisterActivity extends AppCompatActivity {
                 return;
             }
 
-            JDBCService.insertData(finalMa, finalPass, finalTen, finalNganh, finalLop, finalKhoa, finalSDT, finalEmail, success -> {
+            // Gọi hàm insertData mới có roleCode
+            JDBCService.insertData(finalMa, finalPass, finalTen, finalNganh, finalLop, finalKhoa, finalSDT, finalEmail, finalRoleCode, success -> {
                 if(success) {
                     Toast.makeText(RegisterActivity.this, "Đăng ký " + finalRoleMsg + " thành công!\nTài khoản: " + finalMa, Toast.LENGTH_LONG).show();
                     finish();

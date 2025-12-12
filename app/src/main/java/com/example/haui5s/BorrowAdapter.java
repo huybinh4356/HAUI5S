@@ -17,10 +17,13 @@ public class BorrowAdapter extends RecyclerView.Adapter<BorrowAdapter.ViewHolder
 
     private Context context;
     private List<BorrowModel> borrowList;
+    private boolean isTeacher; // Biến xác định quyền
 
-    public BorrowAdapter(Context context, List<BorrowModel> borrowList) {
+    // Cập nhật Constructor thêm biến isTeacher
+    public BorrowAdapter(Context context, List<BorrowModel> borrowList, boolean isTeacher) {
         this.context = context;
         this.borrowList = borrowList;
+        this.isTeacher = isTeacher;
     }
 
     @NonNull
@@ -34,40 +37,42 @@ public class BorrowAdapter extends RecyclerView.Adapter<BorrowAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         BorrowModel item = borrowList.get(position);
 
-        // Hiển thị thông tin (Có thể hiển thị thêm Mã SV nếu muốn: item.getStudentCode())
         holder.tvStudentName.setText(item.getStudentName());
-        holder.tvToolList.setText(item.getToolName()); // Đã sửa thành getToolName
+        holder.tvToolList.setText(item.getToolName());
         holder.tvBorrowDate.setText(item.getBorrowDate());
 
-        // Cấu hình Spinner
         String[] options = {"Chưa trả", "Đã trả"};
         ArrayAdapter<String> adapterSpinner = new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, options);
         holder.spinnerStatus.setAdapter(adapterSpinner);
 
-        // Set trạng thái hiện tại
-        // Giả định: 0 là Chưa trả, 1 là Đã trả (Khớp với TINYINT mặc định 0)
-        if (item.getStatus() == 1) {
-            holder.spinnerStatus.setSelection(1);
+        // Set giá trị hiện tại
+        holder.spinnerStatus.setSelection(item.getStatus() == 1 ? 1 : 0);
+
+        // LOGIC PHÂN QUYỀN:
+        if (isTeacher) {
+            // Nếu là GV: Cho phép bấm, màu đậm
+            holder.spinnerStatus.setEnabled(true);
+            holder.spinnerStatus.setAlpha(1.0f);
         } else {
-            holder.spinnerStatus.setSelection(0);
+            // Nếu là SV: Khóa lại, làm mờ đi
+            holder.spinnerStatus.setEnabled(false);
+            holder.spinnerStatus.setAlpha(0.7f);
         }
 
-        // Xử lý sự kiện chọn Spinner
+        // Sự kiện chọn (Chỉ chạy nếu enabled = true)
         holder.spinnerStatus.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                int newStatus = position;
+                if (!isTeacher) return; // Sinh viên không được update DB
 
-                // Chỉ update nếu trạng thái thay đổi so với ban đầu
+                int newStatus = position;
                 if (newStatus != item.getStatus()) {
                     JDBCService.updateBorrowStatus(item.getBorrowId(), newStatus, success -> {
                         if (success) {
-                            item.setStatus(newStatus); // Cập nhật lại Model để không bị nhảy lại
-                            Toast.makeText(context, "Đã cập nhật: " + (newStatus == 1 ? "Đã trả" : "Chưa trả"), Toast.LENGTH_SHORT).show();
+                            item.setStatus(newStatus);
+                            Toast.makeText(context, "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(context, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
-                            // Reset spinner về cũ nếu lỗi
-                            holder.spinnerStatus.setSelection(item.getStatus());
+                            holder.spinnerStatus.setSelection(item.getStatus()); // Reset nếu lỗi
                         }
                     });
                 }

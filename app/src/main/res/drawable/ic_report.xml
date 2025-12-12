@@ -1,27 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:id="@+id/nav_home_teacher"
-        android:icon="@drawable/ic_home"
-        android:title="Trang chủ" />
-
-    <item
-        android:id="@+id/nav_tools_teacher"
-        android:icon="@drawable/ic_tools"
-        android:title="Mượn công cụ" />
-
-    <item
-        android:id="@+id/nav_report_teacher"
-        android:icon="@android:drawable/ic_menu_edit"
-        android:title="Duyệt Báo Cáo" />
-
-    <item
-        android:id="@+id/nav_calendar_teacher"
-        android:icon="@drawable/ic_calendar"
-        android:title="Lịch dạy" />
-
-    <item
-        android:id="@+id/nav_profile_teacher"
-        android:icon="@drawable/ic_person"
-        android:title="Cá nhân" />
-</menu>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24.0"
+    android:viewportHeight="24.0">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M15.73,3H8.27L3,8.27v7.46L8.27,21h7.46L21,15.73V8.27L15.73,3zM12,17.3c-0.72,0 -1.3,-0.58 -1.3,-1.3c0,-0.72 0.58,-1.3 1.3,-1.3c0.72,0 1.3,0.58 1.3,1.3C13.3,16.72 12.72,17.3 12,17.3zM13,13h-2V7h2V13z"/>
+</vector>

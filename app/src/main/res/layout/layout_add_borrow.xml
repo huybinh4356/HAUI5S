@@ -27,13 +27,14 @@
             android:textStyle="bold"
             android:layout_marginBottom="5dp"/>
 
-        <EditText
+        <AutoCompleteTextView
             android:id="@+id/etStudentId"
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginBottom="10dp"
             android:background="@drawable/bg_rounded_input"
-            android:hint="Mã Sinh Viên (Ví dụ: 2021600123)"
+            android:hint="Nhập Mã SV (Gợi ý tự động)"
+            android:completionThreshold="1"
             android:padding="10dp" />
 
         <EditText
@@ -42,7 +43,7 @@
             android:layout_height="50dp"
             android:layout_marginBottom="20dp"
             android:background="@drawable/bg_rounded_input"
-            android:hint="Tên Sinh Viên"
+            android:hint="Tên Sinh Viên (Tự điền)"
             android:padding="10dp" />
 
         <TextView
@@ -193,7 +194,8 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Dụng cụ khác (Nhập tên &amp; Số lượng):"            android:layout_marginTop="10dp"
+            android:text="Dụng cụ khác (Nhập tên &amp; Số lượng):"
+            android:layout_marginTop="10dp"
             android:textStyle="italic"/>
 
         <LinearLayout

@@ -3,10 +3,13 @@ package com.example.haui5s;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -38,18 +41,21 @@ public class ToolsFragment extends Fragment {
     private Calendar currentCalendar;
     private String selectedDateString;
 
+    private boolean isTeacher = false;
+    private String currentStudentCode = "";
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tools, container, false);
 
+        checkUserRole();
         initViews(view);
         initData();
 
         setupRecyclerView();
         setupCalendarLogic();
 
-        // Load dữ liệu ngay khi mở màn hình
         loadDataForDate(selectedDateString);
 
         fabAdd.setOnClickListener(v -> showAddDialog());
@@ -57,9 +63,14 @@ public class ToolsFragment extends Fragment {
         return view;
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    private void checkUserRole() {
+        if (getActivity() instanceof StudentHomeActivity) {
+            isTeacher = false;
+            currentStudentCode = ((StudentHomeActivity) getActivity()).getMyMaSV();
+        } else {
+            isTeacher = true;
+            currentStudentCode = "";
+        }
     }
 
     private void initViews(View view) {
@@ -73,6 +84,12 @@ public class ToolsFragment extends Fragment {
         tvDays[4] = view.findViewById(R.id.tvT6);
         tvDays[5] = view.findViewById(R.id.tvT7);
         tvDays[6] = view.findViewById(R.id.tvCN);
+
+        if (isTeacher) {
+            fabAdd.setVisibility(View.VISIBLE);
+        } else {
+            fabAdd.setVisibility(View.GONE);
+        }
     }
 
     private void initData() {
@@ -81,51 +98,38 @@ public class ToolsFragment extends Fragment {
     }
 
     private void setupRecyclerView() {
-        adapter = new BorrowAdapter(getContext(), listBorrow);
+        adapter = new BorrowAdapter(getContext(), listBorrow, isTeacher);
         rvBorrowList.setLayoutManager(new LinearLayoutManager(getContext()));
         rvBorrowList.setAdapter(adapter);
     }
 
     private void setupCalendarLogic() {
         Calendar weekCal = (Calendar) currentCalendar.clone();
-        // Set về đầu tuần (Thứ 2) để hiển thị đúng dải
-        // Lưu ý: Tùy locale, ở VN FirstDayOfWeek thường là Monday
         weekCal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
 
-        // Nếu hôm nay là Chủ Nhật, logic trên có thể bị lùi về tuần trước
-        // (Fix nhanh: Nếu muốn luôn hiển thị tuần hiện tại chứa ngày hôm nay)
-        // Nhưng tạm thời giữ logic đơn giản của bạn
-
-        SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()); // Định dạng chuẩn SQL
+        SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         SimpleDateFormat dayOnlyFormat = new SimpleDateFormat("dd", Locale.getDefault());
-        SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
 
-        // Lấy ngày hiện tại format theo SQL để query
         selectedDateString = fullDateFormat.format(currentCalendar.getTime());
 
         for (int i = 0; i < 7; i++) {
             TextView tv = tvDays[i];
-
-            // Ngày dùng để hiển thị trên UI
             String dayNumber = dayOnlyFormat.format(weekCal.getTime());
-            // Ngày dùng để Query DB (yyyy-MM-dd)
             String queryDate = fullDateFormat.format(weekCal.getTime());
-
             String dayName = getDayName(i);
+
             tv.setText(dayName + "\n" + dayNumber);
 
-            // So sánh ngày để highlight
             if (queryDate.equals(selectedDateString)) {
                 highlightDate(tv);
             } else {
                 unhighlightDate(tv);
             }
 
-            // Sự kiện click vào ngày
             tv.setOnClickListener(v -> {
                 for (TextView t : tvDays) unhighlightDate(t);
                 highlightDate((TextView) v);
-                selectedDateString = queryDate; // Cập nhật ngày được chọn
+                selectedDateString = queryDate;
                 loadDataForDate(selectedDateString);
             });
 
@@ -156,24 +160,26 @@ public class ToolsFragment extends Fragment {
         tv.setTextColor(Color.BLACK);
     }
 
-    // --- LOAD DỮ LIỆU TỪ DB (Đã sửa lại) ---
     private void loadDataForDate(String date) {
         if (getContext() == null) return;
 
-        Log.d("TOOLS_FRAGMENT", "Querying date: " + date);
-
-        // Gọi JDBC Service lấy danh sách mượn theo ngày
         JDBCService.getBorrowListByDate(date, list -> {
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     listBorrow.clear();
+
                     if (list != null && !list.isEmpty()) {
-                        listBorrow.addAll(list);
+                        if (isTeacher) {
+                            listBorrow.addAll(list);
+                        } else {
+                            for (BorrowModel item : list) {
+                                if (item.getStudentCode() != null && item.getStudentCode().equalsIgnoreCase(currentStudentCode)) {
+                                    listBorrow.add(item);
+                                }
+                            }
+                        }
                     }
                     adapter.notifyDataSetChanged();
-
-                    // Log để kiểm tra
-                    Log.d("TOOLS_FRAGMENT", "Loaded " + listBorrow.size() + " items.");
                 });
             }
         });
@@ -184,7 +190,6 @@ public class ToolsFragment extends Fragment {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         LayoutInflater inflater = getLayoutInflater();
-
         View dialogView = inflater.inflate(R.layout.layout_add_borrow, null);
         builder.setView(dialogView);
 
@@ -193,8 +198,7 @@ public class ToolsFragment extends Fragment {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
-        // Ánh xạ View
-        EditText etId = dialogView.findViewById(R.id.etStudentId);
+        AutoCompleteTextView etId = dialogView.findViewById(R.id.etStudentId);
         EditText etName = dialogView.findViewById(R.id.etStudentName);
         EditText etQtyChoi = dialogView.findViewById(R.id.etQtyChoi);
         EditText etQtyGie = dialogView.findViewById(R.id.etQtyGie);
@@ -205,6 +209,42 @@ public class ToolsFragment extends Fragment {
         EditText etOtherName = dialogView.findViewById(R.id.etOtherName);
         EditText etQtyOther = dialogView.findViewById(R.id.etQtyOther);
         Button btnSave = dialogView.findViewById(R.id.btnSaveBorrow);
+
+        ArrayAdapter<String> autoAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_dropdown_item_1line);
+        etId.setAdapter(autoAdapter);
+
+        final List<UserInfoModel> tempSearchList = new ArrayList<>();
+
+        etId.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.length() >= 1) {
+                    JDBCService.searchUsers(s.toString(), list -> {
+                        if (getContext() == null) return;
+                        tempSearchList.clear();
+                        tempSearchList.addAll(list);
+                        autoAdapter.clear();
+                        for (UserInfoModel u : list) {
+                            autoAdapter.add(u.getUserCode() + " - " + u.getFullName());
+                        }
+                        autoAdapter.notifyDataSetChanged();
+                    });
+                }
+            }
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        etId.setOnItemClickListener((parent, view, position, id) -> {
+            if (position < tempSearchList.size()) {
+                UserInfoModel selectedUser = tempSearchList.get(position);
+                etId.setText(selectedUser.getUserCode());
+                etId.setSelection(etId.getText().length());
+                etName.setText(selectedUser.getFullName());
+            }
+        });
 
         btnSave.setOnClickListener(v -> {
             String idSv = etId.getText().toString().trim();
@@ -237,12 +277,9 @@ public class ToolsFragment extends Fragment {
                 return;
             }
 
-            // --- CẬP NHẬT: THÊM idSv VÀO CONSTRUCTOR ---
-            // Đây là chỗ sửa lỗi "Expected 6 arguments"
-            // Hiển thị tạm thời lên list để người dùng thấy ngay
             listBorrow.add(new BorrowModel(
                     listBorrow.size() + 1,
-                    idSv,   // <--- THÊM BIẾN NÀY VÀO
+                    idSv,
                     name,
                     finalToolList,
                     selectedDateString + " 10:00:00",
@@ -250,27 +287,21 @@ public class ToolsFragment extends Fragment {
             ));
             adapter.notifyDataSetChanged();
 
-            // --- GỌI JDBC ĐỂ LƯU VÀO DATABASE THẬT ---
-            // Thời gian mượn lấy tạm thời gian hiện tại
             String borrowTime = selectedDateString + " " + new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Calendar.getInstance().getTime());
-
             JDBCService.insertBorrow(idSv, name, finalToolList, borrowTime, 0, check -> {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         if (check) {
                             Toast.makeText(getContext(), "Đã lưu vào CSDL", Toast.LENGTH_SHORT).show();
-                            // Load lại dữ liệu chuẩn từ DB
                             loadDataForDate(selectedDateString);
                         } else {
-                            Toast.makeText(getContext(), "Lỗi khi lưu DB (Kiểm tra xem Mã SV có tồn tại không)", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getContext(), "Lỗi khi lưu DB", Toast.LENGTH_LONG).show();
                         }
                     });
                 }
             });
-
             dialog.dismiss();
         });
-
         dialog.show();
     }
 
@@ -283,8 +314,7 @@ public class ToolsFragment extends Fragment {
                     if (sb.length() > 0) sb.append(", ");
                     sb.append(toolName).append(" (").append(qty).append(")");
                 }
-            } catch (NumberFormatException ignored) {
-            }
+            } catch (NumberFormatException ignored) {}
         }
     }
 }

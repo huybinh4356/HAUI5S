@@ -1,18 +1,31 @@
 package com.example.haui5s;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,9 +34,44 @@ public class ReportFragment extends Fragment {
     private RecyclerView recyclerView;
     private ReportAdapter adapter;
     private List<ReportModel> reportList;
+    private FloatingActionButton fabAdd;
 
-    // Giả lập mã giáo viên (cần thay bằng logic lấy user thật)
-    private String currentTeacherCode = "GV_TEST";
+    private boolean isTeacher = false;
+    private String currentUserCode = "USER";
+
+    // --- BIẾN ĐỂ XỬ LÝ ẢNH ---
+    private TextView tvImgStatusTemp; // Biến tạm để cập nhật giao diện Dialog
+    private String selectedImageStr = ""; // Lưu đường dẫn ảnh để gửi lên DB
+
+    // Bộ khởi chạy Gallery (Phải khai báo trước onCreate)
+    private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Uri selectedUri = result.getData().getData();
+                    if (selectedUri != null) {
+                        selectedImageStr = selectedUri.toString(); // Lưu URI ảnh
+                        // Cập nhật giao diện Dialog
+                        if (tvImgStatusTemp != null) {
+                            tvImgStatusTemp.setText("Đã chọn ảnh thành công!");
+                            tvImgStatusTemp.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+                        }
+                    }
+                }
+            }
+    );
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof TeacherHomeActivity) {
+            isTeacher = true;
+            currentUserCode = ((TeacherHomeActivity) context).getMyMaSV();
+        } else if (context instanceof StudentHomeActivity) {
+            isTeacher = false;
+            currentUserCode = ((StudentHomeActivity) context).getMyMaSV();
+        }
+    }
 
     @Nullable
     @Override
@@ -31,87 +79,161 @@ public class ReportFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_report, container, false);
 
         recyclerView = view.findViewById(R.id.recycler_report);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        fabAdd = view.findViewById(R.id.fabAddReport);
 
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         reportList = new ArrayList<>();
 
-        // Setup Adapter
         adapter = new ReportAdapter(getContext(), reportList, item -> {
-            // Sự kiện click vào item
-            if (item.status == 0) {
-                showGradingDialog(item); // Hiện bảng chấm điểm 5S
+            if (isTeacher) {
+                showGradingDialog(item);
             } else {
-                Toast.makeText(getContext(), "Đã chấm: " + item.finalEvaluation + " điểm", Toast.LENGTH_SHORT).show();
+                showDetailDialog(item);
             }
         });
-
         recyclerView.setAdapter(adapter);
-        loadData();
 
+        fabAdd.setVisibility(View.VISIBLE);
+        fabAdd.setOnClickListener(v -> showAddDialog());
+
+        loadData();
         return view;
     }
 
     private void loadData() {
-        // Gọi JDBC lấy danh sách (isTeacher = true để lấy hết)
-        JDBCService.getReportList(currentTeacherCode, true, list -> {
-            if (list != null) {
-                reportList.clear();
-                reportList.addAll(list);
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> adapter.notifyDataSetChanged());
-                }
+        JDBCService.getReportList(currentUserCode, true, list -> {
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (list != null) {
+                        reportList.clear();
+                        reportList.addAll(list);
+                        adapter.notifyDataSetChanged();
+                    }
+                });
             }
         });
     }
 
-    // Dialog chấm điểm 5S
+    // --- 1. DIALOG THÊM BÁO CÁO (ĐÃ SỬA NÚT ẢNH) ---
+    private void showAddDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_report, null);
+        builder.setView(view);
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        EditText etArea = view.findViewById(R.id.etArea);
+        EditText etNote = view.findViewById(R.id.etNote);
+        Button btnUpload = view.findViewById(R.id.btnUploadImg);
+        tvImgStatusTemp = view.findViewById(R.id.tvImgStatus); // Gán vào biến toàn cục để update sau
+        Button btnSubmit = view.findViewById(R.id.btnSubmitReport);
+
+        // Reset biến ảnh
+        selectedImageStr = "";
+
+        // SỰ KIỆN MỞ GALLERY THẬT
+        btnUpload.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            imagePickerLauncher.launch(intent);
+        });
+
+        btnSubmit.setOnClickListener(v -> {
+            String area = etArea.getText().toString().trim();
+            String note = etNote.getText().toString().trim();
+
+            if (area.isEmpty()) {
+                Toast.makeText(getContext(), "Nhập khu vực!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Nếu chưa chọn ảnh thì dùng ảnh mặc định
+            if (selectedImageStr.isEmpty()) {
+                selectedImageStr = "no_image";
+            }
+
+            JDBCService.insertReport(currentUserCode, currentUserCode, area, note, selectedImageStr, success -> {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (success) {
+                            Toast.makeText(getContext(), "Gửi báo cáo thành công!", Toast.LENGTH_SHORT).show();
+                            loadData();
+                            dialog.dismiss();
+                        }
+                    });
+                }
+            });
+        });
+        dialog.show();
+    }
+
+    // 2. DIALOG CHẤM ĐIỂM
     private void showGradingDialog(ReportModel item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Chấm điểm 5S - " + item.area);
+        builder.setTitle("Chấm điểm: " + item.area);
 
         LinearLayout layout = new LinearLayout(getContext());
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(40, 20, 40, 10);
+        layout.setPadding(50, 20, 50, 20);
 
-        final EditText inputS1 = new EditText(getContext()); inputS1.setHint("Điểm S1 (Sàng lọc)"); inputS1.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); layout.addView(inputS1);
-        final EditText inputS2 = new EditText(getContext()); inputS2.setHint("Điểm S2 (Sắp xếp)"); inputS2.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); layout.addView(inputS2);
-        final EditText inputS3 = new EditText(getContext()); inputS3.setHint("Điểm S3 (Sạch sẽ)"); inputS3.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); layout.addView(inputS3);
-        final EditText inputS4 = new EditText(getContext()); inputS4.setHint("Điểm S4 (Săn sóc)"); inputS4.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); layout.addView(inputS4);
-        final EditText inputS5 = new EditText(getContext()); inputS5.setHint("Điểm S5 (Sẵn sàng)"); inputS5.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); layout.addView(inputS5);
+        final EditText s1 = new EditText(getContext()); s1.setHint("S1"); s1.setInputType(2); layout.addView(s1);
+        final EditText s2 = new EditText(getContext()); s2.setHint("S2"); s2.setInputType(2); layout.addView(s2);
+        final EditText s3 = new EditText(getContext()); s3.setHint("S3"); s3.setInputType(2); layout.addView(s3);
+        final EditText s4 = new EditText(getContext()); s4.setHint("S4"); s4.setInputType(2); layout.addView(s4);
+        final EditText s5 = new EditText(getContext()); s5.setHint("S5"); s5.setInputType(2); layout.addView(s5);
+        final EditText note = new EditText(getContext()); note.setHint("Nhận xét"); layout.addView(note);
 
-        final EditText inputNote = new EditText(getContext()); inputNote.setHint("Nhận xét/Góp ý"); layout.addView(inputNote);
+        if (item.status == 1) {
+            s1.setText(String.valueOf(item.scoreS1));
+            s2.setText(String.valueOf(item.scoreS2));
+            s3.setText(String.valueOf(item.scoreS3));
+            s4.setText(String.valueOf(item.scoreS4));
+            s5.setText(String.valueOf(item.scoreS5));
+            note.setText(item.resolutionNote);
+        }
 
         builder.setView(layout);
-
-        builder.setPositiveButton("Lưu điểm", (dialog, which) -> {
+        builder.setPositiveButton("LƯU", (d, w) -> {
             try {
-                int s1 = Integer.parseInt(inputS1.getText().toString());
-                int s2 = Integer.parseInt(inputS2.getText().toString());
-                int s3 = Integer.parseInt(inputS3.getText().toString());
-                int s4 = Integer.parseInt(inputS4.getText().toString());
-                int s5 = Integer.parseInt(inputS5.getText().toString());
-                String note = inputNote.getText().toString();
+                int sc1 = Integer.parseInt(s1.getText().toString());
+                int sc2 = Integer.parseInt(s2.getText().toString());
+                int sc3 = Integer.parseInt(s3.getText().toString());
+                int sc4 = Integer.parseInt(s4.getText().toString());
+                int sc5 = Integer.parseInt(s5.getText().toString());
+                String cmt = note.getText().toString();
 
-                // Cập nhật xuống DB
-                JDBCService.updateReportStatus(item.id, currentTeacherCode, note, s1, s2, s3, s4, s5, success -> {
+                JDBCService.updateReportStatus(item.id, currentUserCode, cmt, sc1, sc2, sc3, sc4, sc5, success -> {
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
-                            if (success) {
-                                Toast.makeText(getContext(), "Chấm điểm thành công!", Toast.LENGTH_SHORT).show();
-                                loadData(); // Load lại để thấy điểm mới
-                            } else {
-                                Toast.makeText(getContext(), "Lỗi kết nối!", Toast.LENGTH_SHORT).show();
-                            }
+                            Toast.makeText(getContext(), "Đã chấm điểm!", Toast.LENGTH_SHORT).show();
+                            loadData();
                         });
                     }
                 });
-
             } catch (Exception e) {
-                Toast.makeText(getContext(), "Vui lòng nhập đủ điểm số!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Nhập số!", Toast.LENGTH_SHORT).show();
             }
         });
+        builder.show();
+    }
 
-        builder.setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss());
+    // 3. DIALOG XEM CHI TIẾT
+    private void showDetailDialog(ReportModel item) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Chi tiết 5S: " + item.area);
+
+        String statusMsg = (item.status == 0) ? "Chưa xử lý" : "Đã chấm điểm";
+        String msg = "Người báo: " + item.reporterName + "\n" +
+                "Mô tả: " + item.note + "\n\n" +
+                "Trạng thái: " + statusMsg + "\n";
+
+        if (item.status == 1) {
+            msg += "----------------\n" +
+                    "Điểm: " + item.finalEvaluation + "/100\n" +
+                    "Nhận xét: " + item.resolutionNote;
+        }
+
+        builder.setMessage(msg);
+        builder.setPositiveButton("Đóng", (d, w) -> d.dismiss());
         builder.show();
     }
 }
