@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#FFF">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="BÁO CÁO SỰ CỐ"
+        android:gravity="center"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#D32F2F"
+        android:layout_marginBottom="20dp"/>
+
+    <TextView android:text="Khu vực xảy ra sự cố:" android:textStyle="bold"/>
+    <EditText
+        android:id="@+id/etReportArea"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/bg_rounded_input"
+        android:hint="VD: Phòng 302 - Nhà A1"
+        android:padding="10dp"
+        android:layout_marginBottom="15dp"/>
+
+    <TextView android:text="Mô tả chi tiết:" android:textStyle="bold"/>
+    <EditText
+        android:id="@+id/etReportNote"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="@drawable/bg_rounded_input"
+        android:hint="Mô tả tình trạng (bóng cháy, cửa hỏng...)"
+        android:gravity="top|start"
+        android:padding="10dp"
+        android:layout_marginBottom="20dp"/>
+
+    <Button
+        android:id="@+id/btnSendReport"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="GỬI BÁO CÁO"
+        android:backgroundTint="#D32F2F"
+        android:textStyle="bold"/>
+</LinearLayout>

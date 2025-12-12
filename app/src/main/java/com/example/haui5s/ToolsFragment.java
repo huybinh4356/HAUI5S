@@ -49,8 +49,8 @@ public class ToolsFragment extends Fragment {
         setupRecyclerView();
         setupCalendarLogic();
 
-        // KHÔNG GỌI JDBC NGAY Ở ĐÂY - CHỈ GỌI KHI CLICK VÀO NGÀY
-        // loadDataForDate(selectedDateString);
+        // Load dữ liệu ngay khi mở màn hình
+        loadDataForDate(selectedDateString);
 
         fabAdd.setOnClickListener(v -> showAddDialog());
 
@@ -60,10 +60,6 @@ public class ToolsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // Load data sau khi view đã được tạo xong
-        if (selectedDateString != null) {
-            loadDataForDate(selectedDateString);
-        }
     }
 
     private void initViews(View view) {
@@ -92,34 +88,44 @@ public class ToolsFragment extends Fragment {
 
     private void setupCalendarLogic() {
         Calendar weekCal = (Calendar) currentCalendar.clone();
+        // Set về đầu tuần (Thứ 2) để hiển thị đúng dải
+        // Lưu ý: Tùy locale, ở VN FirstDayOfWeek thường là Monday
         weekCal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
 
-        SimpleDateFormat fullDateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        SimpleDateFormat dayOnlyFormat = new SimpleDateFormat("dd", Locale.getDefault());
+        // Nếu hôm nay là Chủ Nhật, logic trên có thể bị lùi về tuần trước
+        // (Fix nhanh: Nếu muốn luôn hiển thị tuần hiện tại chứa ngày hôm nay)
+        // Nhưng tạm thời giữ logic đơn giản của bạn
 
-        String todayStr = fullDateFormat.format(currentCalendar.getTime());
-        selectedDateString = todayStr;
+        SimpleDateFormat fullDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()); // Định dạng chuẩn SQL
+        SimpleDateFormat dayOnlyFormat = new SimpleDateFormat("dd", Locale.getDefault());
+        SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
+
+        // Lấy ngày hiện tại format theo SQL để query
+        selectedDateString = fullDateFormat.format(currentCalendar.getTime());
 
         for (int i = 0; i < 7; i++) {
             TextView tv = tvDays[i];
 
-            String dateOfView = fullDateFormat.format(weekCal.getTime());
+            // Ngày dùng để hiển thị trên UI
             String dayNumber = dayOnlyFormat.format(weekCal.getTime());
-            String dayName = getDayName(i);
+            // Ngày dùng để Query DB (yyyy-MM-dd)
+            String queryDate = fullDateFormat.format(weekCal.getTime());
 
+            String dayName = getDayName(i);
             tv.setText(dayName + "\n" + dayNumber);
 
-            if (dateOfView.equals(selectedDateString)) {
+            // So sánh ngày để highlight
+            if (queryDate.equals(selectedDateString)) {
                 highlightDate(tv);
             } else {
                 unhighlightDate(tv);
             }
 
-            final String currentDate = dateOfView;
+            // Sự kiện click vào ngày
             tv.setOnClickListener(v -> {
                 for (TextView t : tvDays) unhighlightDate(t);
                 highlightDate((TextView) v);
-                selectedDateString = currentDate;
+                selectedDateString = queryDate; // Cập nhật ngày được chọn
                 loadDataForDate(selectedDateString);
             });
 
@@ -150,50 +156,27 @@ public class ToolsFragment extends Fragment {
         tv.setTextColor(Color.BLACK);
     }
 
-    // --- LOAD DỮ LIỆU TỪ DB ---
+    // --- LOAD DỮ LIỆU TỪ DB (Đã sửa lại) ---
     private void loadDataForDate(String date) {
-        listBorrow.clear();
-        adapter.notifyDataSetChanged();
+        if (getContext() == null) return;
 
-        Log.d("TOOLS_FRAGMENT", "Đang load data cho ngày: " + date);
+        Log.d("TOOLS_FRAGMENT", "Querying date: " + date);
 
-        // KIỂM TRA CONTEXT TRƯỚC KHI GỌI JDBC
-        if (getContext() == null) {
-            Log.e("TOOLS_FRAGMENT", "Context is null");
-            return;
-        }
+        // Gọi JDBC Service lấy danh sách mượn theo ngày
+        JDBCService.getBorrowListByDate(date, list -> {
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    listBorrow.clear();
+                    if (list != null && !list.isEmpty()) {
+                        listBorrow.addAll(list);
+                    }
+                    adapter.notifyDataSetChanged();
 
-        // TẠM THỜI DÙNG DATA MẪU (COMMENT JDBC LẠI)
-        // Thêm data mẫu để test UI
-        listBorrow.add(new BorrowModel(1, "Nguyễn Văn A", "Chổi (2), Giẻ lau (1)", "07/12/2024 08:00:00", 0));
-        listBorrow.add(new BorrowModel(2, "Trần Thị B", "Chậu (1), Hót rác (1)", "07/12/2024 09:30:00", 1));
-        adapter.notifyDataSetChanged();
-
-        /*
-        // --- GỌI JDBC SERVICE LẤY DANH SÁCH ---
-        try {
-            JDBCService.getBorrowListByDate(date, list -> {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        listBorrow.clear();
-                        if (list != null) {
-                            listBorrow.addAll(list);
-                        }
-                        adapter.notifyDataSetChanged();
-
-                        if (list == null || list.isEmpty()) {
-                            Toast.makeText(getContext(), "Không có phiếu mượn nào cho ngày " + date, Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-            });
-        } catch (Exception e) {
-            Log.e("TOOLS_FRAGMENT", "Lỗi khi gọi JDBC: " + e.getMessage());
-            if (getContext() != null) {
-                Toast.makeText(getContext(), "Lỗi kết nối database", Toast.LENGTH_SHORT).show();
+                    // Log để kiểm tra
+                    Log.d("TOOLS_FRAGMENT", "Loaded " + listBorrow.size() + " items.");
+                });
             }
-        }
-        */
+        });
     }
 
     private void showAddDialog() {
@@ -210,6 +193,7 @@ public class ToolsFragment extends Fragment {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
+        // Ánh xạ View
         EditText etId = dialogView.findViewById(R.id.etStudentId);
         EditText etName = dialogView.findViewById(R.id.etStudentName);
         EditText etQtyChoi = dialogView.findViewById(R.id.etQtyChoi);
@@ -232,7 +216,6 @@ public class ToolsFragment extends Fragment {
             }
 
             StringBuilder toolString = new StringBuilder();
-
             appendToolIfQty(toolString, "Chổi", etQtyChoi);
             appendToolIfQty(toolString, "Giẻ lau", etQtyGie);
             appendToolIfQty(toolString, "Chậu", etQtyChau);
@@ -254,35 +237,38 @@ public class ToolsFragment extends Fragment {
                 return;
             }
 
-            // TẠM THỜI KHÔNG GỌI JDBC - CHỈ THÊM VÀO LIST
-            BorrowModel newBorrow = new BorrowModel(
+            // --- CẬP NHẬT: THÊM idSv VÀO CONSTRUCTOR ---
+            // Đây là chỗ sửa lỗi "Expected 6 arguments"
+            // Hiển thị tạm thời lên list để người dùng thấy ngay
+            listBorrow.add(new BorrowModel(
                     listBorrow.size() + 1,
+                    idSv,   // <--- THÊM BIẾN NÀY VÀO
                     name,
                     finalToolList,
                     selectedDateString + " 10:00:00",
                     0
-            );
-            listBorrow.add(newBorrow);
+            ));
             adapter.notifyDataSetChanged();
-            Toast.makeText(getContext(), "Đã thêm phiếu mượn (test)", Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
 
-            /*
-            // --- GỌI JDBC SERVICE LƯU PHIẾU MƯỢN ---
-            JDBCService.insertBorrow(idSv, name, finalToolList, selectedDateString, 0, check -> {
+            // --- GỌI JDBC ĐỂ LƯU VÀO DATABASE THẬT ---
+            // Thời gian mượn lấy tạm thời gian hiện tại
+            String borrowTime = selectedDateString + " " + new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Calendar.getInstance().getTime());
+
+            JDBCService.insertBorrow(idSv, name, finalToolList, borrowTime, 0, check -> {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         if (check) {
-                            Toast.makeText(getContext(), "Đã lưu phiếu mượn", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Đã lưu vào CSDL", Toast.LENGTH_SHORT).show();
+                            // Load lại dữ liệu chuẩn từ DB
                             loadDataForDate(selectedDateString);
-                            dialog.dismiss();
                         } else {
-                            Toast.makeText(getContext(), "Lỗi khi lưu", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Lỗi khi lưu DB (Kiểm tra xem Mã SV có tồn tại không)", Toast.LENGTH_LONG).show();
                         }
                     });
                 }
             });
-            */
+
+            dialog.dismiss();
         });
 
         dialog.show();
