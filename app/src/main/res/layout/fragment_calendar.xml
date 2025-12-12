@@ -1,34 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#F5F5F5"
-    android:padding="16dp">
+    android:background="#F5F5F5">
 
-    <TextView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Lịch Trình"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#003366"
-        android:layout_marginBottom="20dp"
-        android:gravity="center"/>
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
-    <com.applandeo.materialcalendarview.CalendarView
-        android:id="@+id/calendarView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-    <TextView
-        android:id="@+id/tvTaskInfo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Chọn ngày để xem chi tiết"
-        android:background="@drawable/bg_rounded_input"
-        android:padding="15dp"
-        android:textSize="16sp"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Lịch Trực Nhật"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#003366"
+                android:layout_marginBottom="20dp"
+                android:gravity="center"/>
 
-</LinearLayout>
+            <com.applandeo.materialcalendarview.CalendarView
+                android:id="@+id/calendarView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"/>
+
+            <TextView
+                android:id="@+id/tvTaskInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chọn ngày để xem chi tiết"
+                android:background="@drawable/bg_rounded_input"
+                android:padding="15dp"
+                android:textSize="16sp"
+                android:textColor="#333333"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="100dp"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddSchedule"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="80dp"
+        android:src="@android:drawable/ic_input_add"
+        app:tint="#FFFFFF"
+        android:backgroundTint="#00BFFF"
+        app:borderWidth="0dp"
+        app:elevation="6dp"
+        android:contentDescription="Thêm lịch" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

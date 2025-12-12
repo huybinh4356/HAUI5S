@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:gravity="center"
+            android:text="PHÂN CÔNG TRỰC NHẬT"
+            android:textColor="#003366"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mã Sinh Viên (Ấn kính lúp để tìm) *"
+            android:textStyle="bold"
+            android:textColor="#333"
+            android:layout_marginBottom="5dp"/>
+
+        <EditText
+            android:id="@+id/etSchStudentCode"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_rounded_input"
+            android:hint="VD: 2021600123"
+            android:padding="10dp"
+            android:inputType="text"
+            android:drawableEnd="@android:drawable/ic_menu_search"
+            android:drawableTint="#00BFFF"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tên Sinh Viên *"
+            android:textStyle="bold"
+            android:textColor="#333"
+            android:layout_marginBottom="5dp"/>
+        <EditText
+            android:id="@+id/etSchStudentName"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_rounded_input"
+            android:hint="Tự động điền..."
+            android:padding="10dp"
+            android:inputType="textPersonName" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lớp"
+            android:textStyle="bold"
+            android:textColor="#333"
+            android:layout_marginBottom="5dp"/>
+        <EditText
+            android:id="@+id/etSchClass"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_rounded_input"
+            android:hint="Tự động điền..."
+            android:padding="10dp"
+            android:inputType="textCapCharacters" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thời gian thực hiện *"
+            android:textStyle="bold"
+            android:textColor="#333"
+            android:layout_marginBottom="5dp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/tvSchDate"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_rounded_input"
+                android:gravity="center_vertical"
+                android:hint="Chọn Ngày"
+                android:paddingStart="10dp"
+                android:layout_marginEnd="8dp"
+                android:drawableEnd="@android:drawable/ic_menu_my_calendar"
+                android:clickable="true"
+                android:focusable="false"/>
+
+            <TextView
+                android:id="@+id/tvSchTime"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_rounded_input"
+                android:gravity="center_vertical"
+                android:hint="Chọn Giờ"
+                android:paddingStart="10dp"
+                android:drawableEnd="@android:drawable/ic_menu_recent_history"
+                android:clickable="true"
+                android:focusable="false"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Khu vực vệ sinh *"
+            android:textStyle="bold"
+            android:textColor="#333"
+            android:layout_marginBottom="5dp"/>
+        <EditText
+            android:id="@+id/etSchArea"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_rounded_input"
+            android:hint="VD: Tầng 2 - Nhà A1"
+            android:padding="10dp"
+            android:inputType="text" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ghi chú công việc"
+            android:textStyle="bold"
+            android:textColor="#333"
+            android:layout_marginBottom="5dp"/>
+        <EditText
+            android:id="@+id/etSchNote"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/bg_rounded_input"
+            android:hint="Mô tả chi tiết công việc..."
+            android:gravity="top|start"
+            android:padding="10dp"
+            android:inputType="textMultiLine"
+            android:minLines="3"/>
+
+        <Button
+            android:id="@+id/btnSaveSchedule"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:text="LƯU LỊCH PHÂN CÔNG"
+            android:backgroundTint="#00BFFF"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="16sp"/>
+
+    </LinearLayout>
+</ScrollView>

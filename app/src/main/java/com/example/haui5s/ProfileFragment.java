@@ -1,6 +1,8 @@
 package com.example.haui5s;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,31 +31,45 @@ public class ProfileFragment extends Fragment {
         tvEmail = view.findViewById(R.id.tvDetailEmail);
         btnLogout = view.findViewById(R.id.btnLogout);
 
-        String masv = "";
-        if(getActivity() instanceof StudentHomeActivity) {
-            masv = ((StudentHomeActivity) getActivity()).getMyMaSV();
-        } else if (getActivity() instanceof TeacherHomeActivity) {
-            masv = ((TeacherHomeActivity) getActivity()).getMyMaSV();
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
+        String masv = sharedPreferences.getString("masv", "");
+
+        if (masv.isEmpty()) {
+            Toast.makeText(getContext(), "Lỗi: Không tìm thấy phiên đăng nhập!", Toast.LENGTH_SHORT).show();
+            return view;
         }
 
-        // --- GỌI JDBC SERVICE LẤY THÔNG TIN USER ---
-        String finalMasv = masv;
+        tvID.setText("Mã SV: " + masv);
+        tvName.setText("Đang tải dữ liệu...");
+
         JDBCService.getUserInfo(masv, user -> {
-            if(user != null) {
-                tvName.setText(user.fullName);
-                tvID.setText("Mã SV: " + finalMasv);
-                tvLop.setText("Lớp: " + user.classInfo + " - " + user.course);
-                tvNganh.setText("Ngành: " + user.major);
-                tvEmail.setText("Email: " + user.email);
+            if (!isAdded() || getContext() == null) {
+                return;
+            }
+
+            if (user != null) {
+                tvName.setText(user.fullName != null ? user.fullName : "Chưa cập nhật");
+
+                String lopHoc = user.classInfo != null ? user.classInfo : "";
+                String khoaHoc = user.course != null ? user.course : "";
+                tvLop.setText("Lớp: " + lopHoc + " - " + khoaHoc);
+
+                tvNganh.setText("Ngành: " + (user.major != null ? user.major : ""));
+                tvEmail.setText("Email: " + (user.email != null ? user.email : ""));
             } else {
-                Toast.makeText(getActivity(), "Không thể tải thông tin người dùng!", Toast.LENGTH_SHORT).show();
+                tvName.setText("Lỗi tải dữ liệu");
+                Toast.makeText(getContext(), "Không thể lấy thông tin cá nhân từ Server!", Toast.LENGTH_SHORT).show();
             }
         });
 
         btnLogout.setOnClickListener(v -> {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.clear();
+            editor.apply();
+
             Intent intent = new Intent(getActivity(), LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-            getActivity().finish();
         });
 
         return view;
