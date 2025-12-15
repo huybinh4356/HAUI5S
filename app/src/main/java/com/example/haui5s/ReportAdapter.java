@@ -5,9 +5,13 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ViewHolder> {
@@ -62,6 +66,20 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ViewHolder
             holder.tvScore.setText("Điểm 5S: " + item.finalEvaluation + "/100");
         }
 
+        // LOGIC MỚI: HIỂN THỊ ẢNH TỪ URL
+        if (item.imageUrl != null && !item.imageUrl.equals("no_image")) {
+            holder.ivImage.setVisibility(View.VISIBLE);
+            // Tải ảnh từ URL công khai (ImgBB)
+            Glide.with(context)
+                    .load(item.imageUrl)
+                    .placeholder(R.drawable.ic_image_placeholder) // Bạn nên có icon placeholder
+                    .error(R.drawable.ic_image_error) // Icon báo lỗi
+                    .into(holder.ivImage);
+        } else {
+            // Ẩn ImageView nếu không có ảnh
+            holder.ivImage.setVisibility(View.GONE);
+        }
+
         // Bắt sự kiện click vào item (để xem chi tiết hoặc chấm điểm)
         holder.itemView.setOnClickListener(v -> listener.onItemClick(item));
     }
@@ -73,6 +91,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ViewHolder
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvArea, tvReporter, tvTime, tvStatus, tvScore, tvNote;
+        ImageView ivImage; //
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -83,6 +102,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ViewHolder
             tvStatus = itemView.findViewById(R.id.tv_item_status);
             tvScore = itemView.findViewById(R.id.tv_item_score);
             tvNote = itemView.findViewById(R.id.tv_item_note);
+            ivImage = itemView.findViewById(R.id.iv_item_image);
         }
     }
 }

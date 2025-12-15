@@ -55,6 +55,16 @@
             android:textSize="13sp"
             android:textColor="#555"/>
 
+        <ImageView
+            android:id="@+id/iv_item_image"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginTop="8dp"
+            android:scaleType="centerInside"
+            android:background="#EEEEEE"
+            android:visibility="gone"
+            android:contentDescription="Ảnh báo cáo"/>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

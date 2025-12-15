@@ -6,13 +6,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,10 +29,34 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.example.haui5s.JDBCService;
+import com.example.haui5s.R;
+import com.example.haui5s.StudentHomeActivity;
+import com.example.haui5s.TeacherHomeActivity;
+import com.example.haui5s.api.ImgBBService;
+import com.example.haui5s.utils.DataUtils;
+import com.example.haui5s.utils.FileUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.Random;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+import com.example.haui5s.api.ImgBBService.ImgBBResponse; // Đã sửa lỗi báo đỏ
 
 public class ReportFragment extends Fragment {
 
@@ -39,24 +68,48 @@ public class ReportFragment extends Fragment {
     private boolean isTeacher = false;
     private String currentUserCode = "USER";
 
-    // --- BIẾN ĐỂ XỬ LÝ ẢNH ---
-    private TextView tvImgStatusTemp; // Biến tạm để cập nhật giao diện Dialog
-    private String selectedImageStr = ""; // Lưu đường dẫn ảnh để gửi lên DB
+    // --- BIẾN ĐỂ XỬ LÝ ẢNH (Trong Dialog) ---
+    private TextView tvImgStatusTemp;
+    private ImageView ivPreviewImageTemp;
+    private String selectedImageStr = ""; // Lưu URI ảnh đã chọn (String)
 
-    // Bộ khởi chạy Gallery (Phải khai báo trước onCreate)
+    // Khai báo biến cho Tìm kiếm và Lọc
+    private EditText etSearch;
+    private Spinner spinnerStatusFilter;
+
+    private List<ReportModel> fullReportList; // Danh sách gốc không bị thay đổi
+    private String currentSearchQuery = "";
+    private int currentStatusFilter = -1; // -1: Tất cả, 0: Pending, 1: Completed
+
+    // Bộ khởi chạy Gallery
     private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                     Uri selectedUri = result.getData().getData();
+
                     if (selectedUri != null) {
-                        selectedImageStr = selectedUri.toString(); // Lưu URI ảnh
-                        // Cập nhật giao diện Dialog
-                        if (tvImgStatusTemp != null) {
-                            tvImgStatusTemp.setText("Đã chọn ảnh thành công!");
-                            tvImgStatusTemp.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+                        selectedImageStr = selectedUri.toString();
+
+                        // 1. Load ảnh xem trước và hiển thị
+                        if (ivPreviewImageTemp != null) {
+                            ivPreviewImageTemp.setVisibility(View.VISIBLE);
+                            Glide.with(this)
+                                    .load(selectedUri)
+                                    .into(ivPreviewImageTemp);
                         }
+
+                        // 2. Ẩn dòng Trạng thái
+                        if (tvImgStatusTemp != null) {
+                            tvImgStatusTemp.setVisibility(View.GONE);
+                        }
+
+                        Toast.makeText(getContext(), "Đã chọn ảnh thành công! Sẵn sàng để gửi.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Không nhận được dữ liệu ảnh.", Toast.LENGTH_SHORT).show();
                     }
+                } else {
+                    Toast.makeText(getContext(), "Đã hủy chọn ảnh.", Toast.LENGTH_SHORT).show();
                 }
             }
     );
@@ -81,8 +134,13 @@ public class ReportFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recycler_report);
         fabAdd = view.findViewById(R.id.fabAddReport);
 
+        // ÁNH XẠ VIEW MỚI
+        etSearch = view.findViewById(R.id.et_search);
+        spinnerStatusFilter = view.findViewById(R.id.spinner_status_filter);
+
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         reportList = new ArrayList<>();
+        fullReportList = new ArrayList<>(); // Đây là danh sách toàn bộ dữ liệu gốc
 
         adapter = new ReportAdapter(getContext(), reportList, item -> {
             if (isTeacher) {
@@ -97,7 +155,81 @@ public class ReportFragment extends Fragment {
         fabAdd.setOnClickListener(v -> showAddDialog());
 
         loadData();
+
+        // Thiết lập Lọc và Tìm kiếm
+        setupFilters();
+        setupSearchListener();
         return view;
+    }
+
+    // Hàm thiết lập Spinner Filter
+    private void setupFilters() {
+        // Chuẩn bị danh sách trạng thái
+        String[] statuses = new String[]{"Tất cả", "🔴 Chưa chấm", "🟢 Đã chấm"};
+
+        // Tạo ArrayAdapter cho Spinner
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                getContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                statuses
+        );
+        spinnerStatusFilter.setAdapter(adapter);
+
+        // Xử lý sự kiện chọn item
+        spinnerStatusFilter.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // position 0: Tất cả (-1), 1: Chưa xử lý (0), 2: Đã chấm điểm (1)
+                currentStatusFilter = position - 1;
+                applyFilters();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Không làm gì nếu không chọn
+            }
+        });
+    }
+
+    // Hàm thiết lập Tìm kiếm
+    private void setupSearchListener() {
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                currentSearchQuery = s.toString().trim().toLowerCase(Locale.getDefault());
+                applyFilters();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    // Hàm quan trọng: Áp dụng cả tìm kiếm và lọc
+    private void applyFilters() {
+        List<ReportModel> filteredList = new ArrayList<>();
+
+        for (ReportModel item : fullReportList) {
+            // 1. Lọc theo trạng thái
+            boolean statusMatch = (currentStatusFilter == -1) || (item.status == currentStatusFilter);
+
+            // 2. Tìm kiếm theo từ khóa
+            boolean searchMatch = currentSearchQuery.isEmpty() ||
+                    item.area.toLowerCase(Locale.getDefault()).contains(currentSearchQuery) ||
+                    item.note.toLowerCase(Locale.getDefault()).contains(currentSearchQuery);
+
+            if (statusMatch && searchMatch) {
+                filteredList.add(item);
+            }
+        }
+
+        // Cập nhật RecyclerView
+        reportList.clear();
+        reportList.addAll(filteredList);
+        adapter.notifyDataSetChanged();
     }
 
     private void loadData() {
@@ -105,16 +237,31 @@ public class ReportFragment extends Fragment {
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     if (list != null) {
-                        reportList.clear();
-                        reportList.addAll(list);
-                        adapter.notifyDataSetChanged();
+                        // Lưu dữ liệu gốc vào danh sách đầy đủ
+                        fullReportList.clear();
+                        fullReportList.addAll(list);
+
+                        // Áp dụng bộ lọc (và tìm kiếm) ngay sau khi tải dữ liệu
+                        applyFilters();
                     }
                 });
             }
         });
     }
 
-    // --- 1. DIALOG THÊM BÁO CÁO (ĐÃ SỬA NÚT ẢNH) ---
+    // Hàm mở Gallery được cách ly
+    private void openGalleryIntent() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT); // <-- Intent ổn định nhất
+        intent.setType("image/*");
+
+        if (intent.resolveActivity(getContext().getPackageManager()) != null) {
+            imagePickerLauncher.launch(intent);
+        } else {
+            Toast.makeText(getContext(), "Lỗi: Không tìm thấy ứng dụng quản lý ảnh.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // --- DIALOG THÊM BÁO CÁO ---
     private void showAddDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_report, null);
@@ -125,18 +272,24 @@ public class ReportFragment extends Fragment {
         EditText etArea = view.findViewById(R.id.etArea);
         EditText etNote = view.findViewById(R.id.etNote);
         Button btnUpload = view.findViewById(R.id.btnUploadImg);
-        tvImgStatusTemp = view.findViewById(R.id.tvImgStatus); // Gán vào biến toàn cục để update sau
+
+        // Ánh xạ các View ảnh
+        tvImgStatusTemp = view.findViewById(R.id.tvImgStatus);
+        ivPreviewImageTemp = view.findViewById(R.id.ivPreviewImage);
         Button btnSubmit = view.findViewById(R.id.btnSubmitReport);
 
-        // Reset biến ảnh
+        // --- THIẾT LẬP TRẠNG THÁI BAN ĐẦU ---
         selectedImageStr = "";
+        ivPreviewImageTemp.setVisibility(View.GONE);
+        tvImgStatusTemp.setVisibility(View.VISIBLE);
+        tvImgStatusTemp.setText("Chưa có ảnh được chọn.");
 
-        // SỰ KIỆN MỞ GALLERY THẬT
+        // SỰ KIỆN MỞ GALLERY
         btnUpload.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            imagePickerLauncher.launch(intent);
+            openGalleryIntent(); // <-- Gọi hàm mở Intent đã cách ly
         });
 
+        // SỰ KIỆN GỬI BÁO CÁO
         btnSubmit.setOnClickListener(v -> {
             String area = etArea.getText().toString().trim();
             String note = etNote.getText().toString().trim();
@@ -146,27 +299,19 @@ public class ReportFragment extends Fragment {
                 return;
             }
 
-            // Nếu chưa chọn ảnh thì dùng ảnh mặc định
             if (selectedImageStr.isEmpty()) {
-                selectedImageStr = "no_image";
+                // KHÔNG CÓ ẢNH: Lưu thẳng với URL mặc định
+                insertReportWithUrl(area, note, "no_image", dialog);
+            } else {
+                // CÓ ẢNH: Bắt đầu quá trình Upload lên ImgBB
+                Uri imageUri = Uri.parse(selectedImageStr);
+                uploadToImgBB(imageUri, area, note, dialog);
             }
-
-            JDBCService.insertReport(currentUserCode, currentUserCode, area, note, selectedImageStr, success -> {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        if (success) {
-                            Toast.makeText(getContext(), "Gửi báo cáo thành công!", Toast.LENGTH_SHORT).show();
-                            loadData();
-                            dialog.dismiss();
-                        }
-                    });
-                }
-            });
         });
         dialog.show();
     }
 
-    // 2. DIALOG CHẤM ĐIỂM
+    // 2. DIALOG CHẤM ĐIỂM (Giữ nguyên)
     private void showGradingDialog(ReportModel item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Chấm điểm: " + item.area);
@@ -216,24 +361,122 @@ public class ReportFragment extends Fragment {
         builder.show();
     }
 
-    // 3. DIALOG XEM CHI TIẾT
     private void showDetailDialog(ReportModel item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Chi tiết 5S: " + item.area);
-
-        String statusMsg = (item.status == 0) ? "Chưa xử lý" : "Đã chấm điểm";
-        String msg = "Người báo: " + item.reporterName + "\n" +
-                "Mô tả: " + item.note + "\n\n" +
-                "Trạng thái: " + statusMsg + "\n";
-
+        builder.setTitle("🔍 CHI TIẾT BÁO CÁO 5S");
+        StringBuilder msgBuilder = new StringBuilder();
+        String reportId = DataUtils.generateReportCode(item.id);
+        msgBuilder.append("📍 KHU VỰC BÁO CÁO\n")
+                .append("==========================\n")
+                .append(item.area)
+                .append("\n\n");
+        msgBuilder.append("📝 MÔ TẢ CHI TIẾT (Ghi chú)\n")
+                .append("==========================\n")
+                .append(item.note.isEmpty() ? "Không có mô tả chi tiết." : item.note)
+                .append("\n");
+        msgBuilder.append("\n-------------------------------------------\n\n");
+        msgBuilder.append("🆔 Mã Báo Cáo:\n")
+                .append("   ▶ **").append(reportId).append("**\n\n");
+        msgBuilder.append("👤 Người Báo Cáo:\n")
+                .append("   ▶ ").append(item.reporterCode).append("\n\n");
+        msgBuilder.append("⏱️ Thời Gian Báo Cáo:\n")
+                .append("   ▶ ").append(item.timestamp).append("\n");
+        msgBuilder.append("\n-------------------------------------------\n\n");
+        String statusMsg = (item.status == 0)
+                ? "🔴 CHƯA XỬ LÝ (Pending)"
+                : "🟢 ĐÃ CHẤM ĐIỂM (Completed)";
+        msgBuilder.append("📊 Trạng Thái Xử Lý:\n")
+                .append("   ▶ **").append(statusMsg).append("**\n");
         if (item.status == 1) {
-            msg += "----------------\n" +
-                    "Điểm: " + item.finalEvaluation + "/100\n" +
-                    "Nhận xét: " + item.resolutionNote;
+            msgBuilder.append("\n")
+                    .append("🏆 KẾT QUẢ CHẤM ĐIỂM:\n")
+                    .append("   ▶ Điểm Tổng: **").append(item.finalEvaluation).append("/100**\n")
+                    .append("   ▶ Nhận Xét: ").append(item.resolutionNote);
+        }
+        msgBuilder.append("\n-------------------------------------------\n\n");
+        msgBuilder.append("🖼️ Ảnh Minh Chứng:\n");
+        if (item.imageUrl != null && !item.imageUrl.isEmpty() && !item.imageUrl.equals("no_image")) {
+            msgBuilder.append("  * Ảnh đã được tải lên máy chủ\n")
+                    .append("  * URL: ").append(item.imageUrl);
+        } else {
+            msgBuilder.append("  * Không có ảnh minh chứng đính kèm");
         }
 
-        builder.setMessage(msg);
+        builder.setMessage(msgBuilder.toString());
         builder.setPositiveButton("Đóng", (d, w) -> d.dismiss());
         builder.show();
+    }
+
+    private void uploadToImgBB(Uri imageUri, String area, String note, AlertDialog dialog) {
+        // 1. Lấy File từ URI (Hàm này phức tạp, cần viết hàm phụ trợ: getRealPathFromURI)
+        File file = FileUtils.getFile(getContext(), imageUri); // Giả định bạn có một FileUtils.getFile
+
+        if (file == null) {
+            Toast.makeText(getContext(), "Không thể đọc file ảnh.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Tạm thời hiển thị "Đang tải lên..."
+        tvImgStatusTemp.setVisibility(View.VISIBLE);
+        tvImgStatusTemp.setText("⏳ Đang tải ảnh lên ImgBB...");
+        ivPreviewImageTemp.setVisibility(View.GONE);
+
+        // 2. Tạo Retrofit instance và gọi API
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://api.imgbb.com/1/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        ImgBBService service = retrofit.create(ImgBBService.class);
+
+        // Tạo Request Body
+        RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
+        MultipartBody.Part imagePart = MultipartBody.Part.createFormData("image", file.getName(), requestFile);
+
+        String KEY = "c75a48c8fab66f61d7d8a9ad98b4a90f";
+        Call<ImgBBResponse> call = service.uploadImage(KEY, imagePart);
+
+        call.enqueue(new Callback<ImgBBResponse>() {
+            @Override
+            public void onResponse(Call<ImgBBResponse> call, Response<ImgBBResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().success) {
+                    // Tải lên thành công!
+                    String publicUrl = response.body().data.url;
+
+                    // 3. Lưu vào DB (Gọi hàm insertReport)
+                    insertReportWithUrl(area, note, publicUrl, dialog);
+                } else {
+                    Toast.makeText(getContext(), "Lỗi ImgBB: " + response.code() + " - " + response.message(), Toast.LENGTH_LONG).show();
+                    tvImgStatusTemp.setText("❌ Tải ảnh thất bại.");
+                    ivPreviewImageTemp.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ImgBBResponse> call, Throwable t) {
+                Toast.makeText(getContext(), "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                tvImgStatusTemp.setText("❌ Lỗi mạng khi tải ảnh.");
+                ivPreviewImageTemp.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    // Hàm gửi báo cáo sau khi có URL công khai
+    private void insertReportWithUrl(String area, String note, String imageUrl, AlertDialog dialog) {
+        // Gọi dịch vụ JDBC của bạn với URL công khai
+
+        JDBCService.insertReport(currentUserCode, currentUserCode, area, note, imageUrl, success -> {
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    if (success) {
+                        Toast.makeText(getContext(), "Gửi báo cáo thành công!", Toast.LENGTH_SHORT).show();
+                        loadData();
+                        dialog.dismiss();
+                    } else {
+                        Toast.makeText(getContext(), "Lỗi: Lưu DB thất bại.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
     }
 }

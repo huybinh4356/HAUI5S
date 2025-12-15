@@ -11,51 +11,79 @@
         android:layout_height="wrap_content"
         android:text="TẠO BÁO CÁO 5S"
         android:textStyle="bold"
-        android:textSize="20sp"
+        android:textSize="22sp"
         android:textColor="#D32F2F"
         android:gravity="center"
-        android:layout_marginBottom="15dp"/>
+        android:layout_marginBottom="20dp"/>
 
     <EditText
         android:id="@+id/etArea"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Khu vực (VD: Phòng 301)"
+        android:hint="Khu vực (VD: Phòng 301, Dây chuyền A)"
         android:background="@drawable/bg_rounded_input"
         android:padding="12dp"
-        android:layout_marginBottom="10dp"/>
+        android:layout_marginBottom="12dp"
+        android:inputType="textCapSentences"/>
 
     <EditText
         android:id="@+id/etNote"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Mô tả sự cố..."
+        android:hint="Mô tả chi tiết sự cố 5S..."
         android:background="@drawable/bg_rounded_input"
         android:padding="12dp"
-        android:minLines="3"
+        android:minLines="4"
         android:gravity="top"
-        android:layout_marginBottom="10dp"/>
+        android:layout_marginBottom="15dp"
+        android:inputType="textMultiLine"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ảnh Minh Chứng:"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginBottom="8dp"/>
 
     <Button
         android:id="@+id/btnUploadImg"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="📷 Tải ảnh lên"
-        android:backgroundTint="#757575"/>
+        android:text="📷 Chọn/Tải ảnh lên"
+        android:backgroundTint="#757575"
+        android:drawableStart="@android:drawable/ic_menu_gallery"
+        android:drawablePadding="5dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:layout_marginBottom="10dp"/>
+
+    <ImageView
+        android:id="@+id/ivPreviewImage"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        android:layout_marginBottom="10dp"
+        android:visibility="gone"
+        android:background="#EEEEEE"
+        android:contentDescription="Ảnh đã chọn để xem trước" />
 
     <TextView
         android:id="@+id/tvImgStatus"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Chưa có ảnh"
-        android:layout_marginBottom="20dp"
-        android:textStyle="italic"/>
+        android:text="Chưa có ảnh được chọn."
+        android:layout_marginBottom="25dp"
+        android:textStyle="italic"
+        android:textColor="#555555"/>
 
     <Button
         android:id="@+id/btnSubmitReport"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="GỬI BÁO CÁO"
+        android:text="GỬI BÁO CÁO 5S"
         android:backgroundTint="#D32F2F"
-        android:textStyle="bold"/>
+        android:textStyle="bold"
+        android:padding="12dp"
+        android:textSize="16sp"/>
 </LinearLayout>
