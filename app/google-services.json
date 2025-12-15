@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "287993195658",
+    "firebase_url": "https://haui5s-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "haui5s",
+    "storage_bucket": "haui5s.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287993195658:android:0ddf572347f33cc14dd173",
+        "android_client_info": {
+          "package_name": "com.example.haui5s"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDaFnO3pALO624ExtVOJYqdkePkkXlUrX4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

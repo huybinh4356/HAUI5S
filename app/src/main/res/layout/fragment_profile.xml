@@ -6,18 +6,20 @@
     android:background="#F5F5F5"
     android:gravity="center_horizontal"
     android:padding="20dp"
-    android:fitsSystemWindows="true"> <ImageView
-    android:layout_width="100dp"
-    android:layout_height="100dp"
-    android:src="@drawable/ic_launcher_foreground"
-    android:background="@drawable/bg_rounded_input"
-    android:layout_marginBottom="15dp"/>
+    android:fitsSystemWindows="true">
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/ic_launcher_foreground"
+        android:background="@drawable/bg_rounded_input"
+        android:layout_marginBottom="15dp"/>
 
     <TextView
         android:id="@+id/tvProfileName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tên Sinh Viên"
+        android:text="Đang tải..."
         android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="#003366"
@@ -35,36 +37,69 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@color/white"
-        android:padding="20dp">
+        android:background="@android:color/white"
+        android:padding="20dp"
+        android:elevation="4dp">
 
         <TextView
             android:id="@+id/tvDetailLop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="Lớp: ..."
             android:textSize="16sp"
-            android:layout_marginBottom="10dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:padding="5dp"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEE"
+            android:layout_marginBottom="5dp"/>
 
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEE" android:layout_marginBottom="10dp"/>
+        <TextView
+            android:id="@+id/tvDetailKhoa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Khóa: ..."
+            android:textSize="16sp"
+            android:padding="5dp"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEE"
+            android:layout_marginBottom="5dp"/>
 
         <TextView
             android:id="@+id/tvDetailNganh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="Ngành: ..."
             android:textSize="16sp"
-            android:layout_marginBottom="10dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEE" android:layout_marginBottom="10dp"/>
+            android:padding="5dp"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEE"
+            android:layout_marginBottom="5dp"/>
 
         <TextView
             android:id="@+id/tvDetailEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="Email: ..."
             android:textSize="16sp"
-            android:layout_marginBottom="10dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:padding="5dp"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEE"
+            android:layout_marginBottom="5dp"/>
+
+        <TextView
+            android:id="@+id/tvDetailPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SĐT: ..."
+            android:textSize="16sp"
+            android:padding="5dp"/>
 
     </LinearLayout>
 

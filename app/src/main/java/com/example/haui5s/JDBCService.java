@@ -32,26 +32,34 @@ public class JDBCService {
 
     public interface SimpleCallback { void onResult(boolean success); }
     public interface LoginCallback { void onLoginResult(boolean success); }
-    public interface UserInfoCallback { void onInfoLoaded(UserInfoModel user); }
+    public interface UserCallback { void onUserLoaded(UserInfoModel user); }
     public interface BorrowListCallback { void onListLoaded(List<BorrowModel> list); }
     public interface ScheduleListCallback { void onLoaded(List<ScheduleModel> schedules); }
     public interface ReportListCallback { void onLoaded(List<ReportModel> list); }
     public interface SearchUserCallback { void onFound(List<UserInfoModel> list); }
 
-    public static void getUserInfo(String userCode, UserInfoCallback callback) {
+    public static void getUserInfo(String userCode, UserCallback callback) {
         executor.execute(() -> {
             UserInfoModel user = null;
-            String SQL = "SELECT full_name, major, class, course, phone, email FROM users WHERE user_code = ?";
+            String SQL = "SELECT * FROM users WHERE user_code = ?";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
                 stmt.setString(1, userCode);
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
-                        user = new UserInfoModel(userCode, rs.getString("full_name"), rs.getString("major"), rs.getString("class"), rs.getString("course"), rs.getString("phone"), rs.getString("email"));
+                        user = new UserInfoModel(
+                                rs.getString("user_code"),
+                                rs.getString("full_name"),
+                                rs.getString("major"),
+                                rs.getString("class"),
+                                rs.getString("course"),
+                                rs.getString("phone"),
+                                rs.getString("email")
+                        );
                     }
                 }
             } catch (SQLException e) { e.printStackTrace(); }
             final UserInfoModel finalUser = user;
-            mainHandler.post(() -> callback.onInfoLoaded(finalUser));
+            mainHandler.post(() -> callback.onUserLoaded(finalUser));
         });
     }
 
@@ -177,12 +185,30 @@ public class JDBCService {
         });
     }
 
-    public static void getAllSchedules(ScheduleListCallback callback) {
+    public static void getSchedulesByRole(String userCode, boolean isTeacher, ScheduleListCallback callback) {
         executor.execute(() -> {
             List<ScheduleModel> list = new ArrayList<>();
-            String SQL = "SELECT schedule_id, person_name, area, note, schedule_date FROM cleaning_schedule ORDER BY schedule_date ASC";
-            try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL); ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) list.add(new ScheduleModel(rs.getInt("schedule_id"), rs.getString("person_name"), rs.getString("area"), rs.getString("note"), rs.getString("schedule_date")));
+            String SQL;
+            if (isTeacher) {
+                SQL = "SELECT schedule_id, person_name, area, note, schedule_date FROM cleaning_schedule ORDER BY schedule_date ASC";
+            } else {
+                SQL = "SELECT schedule_id, person_name, area, note, schedule_date FROM cleaning_schedule WHERE person_code = ? ORDER BY schedule_date ASC";
+            }
+            try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
+                if (!isTeacher) {
+                    stmt.setString(1, userCode);
+                }
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(new ScheduleModel(
+                                rs.getInt("schedule_id"),
+                                rs.getString("person_name"),
+                                rs.getString("area"),
+                                rs.getString("note"),
+                                rs.getString("schedule_date")
+                        ));
+                    }
+                }
             } catch (SQLException e) { e.printStackTrace(); }
             mainHandler.post(() -> callback.onLoaded(list));
         });
@@ -258,7 +284,7 @@ public class JDBCService {
     public static void searchUsers(String keyword, SearchUserCallback callback) {
         executor.execute(() -> {
             List<UserInfoModel> list = new ArrayList<>();
-            String SQL = "SELECT user_code, full_name, major, class, course, phone, email FROM users WHERE user_code LIKE ? OR full_name LIKE ? LIMIT 5";
+            String SQL = "SELECT * FROM users WHERE user_code LIKE ? OR full_name LIKE ? LIMIT 5";
             try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(SQL)) {
                 String searchPattern = "%" + keyword + "%";
                 stmt.setString(1, searchPattern);

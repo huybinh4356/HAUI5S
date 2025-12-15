@@ -4,12 +4,12 @@ public class UserInfoModel {
     public String userCode;
     public String fullName;
     public String major;
-    public String classInfo; // Sử dụng classInfo thay cho class
+    public String classInfo;
     public String course;
-    public String phone; // <-- THÊM BIẾN NÀY
+    public String phone;
     public String email;
 
-    // THÊM THAM SỐ phone VÀO CONSTRUCTOR
+
     public UserInfoModel(String userCode, String fullName, String major,
                          String classInfo, String course, String phone, String email) {
         this.userCode = userCode;

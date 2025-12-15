@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,23 +32,20 @@ public class CalendarFragment extends Fragment {
     private CalendarView calendarView;
     private TextView tvTaskInfo;
     private FloatingActionButton fabAdd;
-
-    // Biến lưu trạng thái: true = Giáo viên, false = Sinh viên
     private boolean isTeacher = false;
-
-    // List lưu các ngày có lịch trực để hiển thị chấm tròn trên lịch
+    private String currentUserCode = "";
     private List<EventDay> events = new ArrayList<>();
-    // List lưu dữ liệu gốc từ DB
     private List<ScheduleModel> scheduleList = new ArrayList<>();
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        // 1. KIỂM TRA QUYỀN (ROLE) NGAY KHI GẮN FRAGMENT
         if (context instanceof TeacherHomeActivity) {
-            isTeacher = true; // Là Giáo viên
-        } else {
-            isTeacher = false; // Là Sinh viên
+            isTeacher = true;
+            currentUserCode = ((TeacherHomeActivity) context).getMyMaSV();
+        } else if (context instanceof StudentHomeActivity) {
+            isTeacher = false;
+            currentUserCode = ((StudentHomeActivity) context).getMyMaSV();
         }
     }
 
@@ -57,10 +53,8 @@ public class CalendarFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_calendar, container, false);
-
         initViews(view);
-        loadSchedulesFromDB(); // Tải dữ liệu lịch
-
+        loadSchedulesFromDB();
         return view;
     }
 
@@ -69,47 +63,37 @@ public class CalendarFragment extends Fragment {
         tvTaskInfo = view.findViewById(R.id.tvTaskInfo);
         fabAdd = view.findViewById(R.id.fabAddSchedule);
 
-        // 2. XỬ LÝ ẨN/HIỆN NÚT THÊM DỰA VÀO QUYỀN
         if (isTeacher) {
-            fabAdd.setVisibility(View.VISIBLE); // GV thì cho hiện
+            fabAdd.setVisibility(View.VISIBLE);
             fabAdd.setOnClickListener(v -> showAddDialog());
         } else {
-            fabAdd.setVisibility(View.GONE);    // SV thì ẩn đi
+            fabAdd.setVisibility(View.GONE);
         }
 
-        // Sự kiện khi bấm vào một ngày trên lịch
         calendarView.setOnDayClickListener(eventDay -> {
             Calendar clickedDay = eventDay.getCalendar();
             showTaskDetails(clickedDay);
         });
     }
 
-    // --- TẢI DỮ LIỆU TỪ DB ---
     private void loadSchedulesFromDB() {
-        JDBCService.getAllSchedules(list -> {
+        JDBCService.getSchedulesByRole(currentUserCode, isTeacher, list -> {
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     scheduleList.clear();
                     events.clear();
-
                     if (list != null) {
                         scheduleList.addAll(list);
-
-                        // Duyệt qua danh sách để tạo dấu chấm trên lịch
                         for (ScheduleModel item : list) {
                             try {
                                 Calendar calendar = Calendar.getInstance();
                                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
                                 calendar.setTime(sdf.parse(item.getScheduleDate()));
-
-                                // Thêm dấu chấm màu đỏ vào ngày đó
                                 events.add(new EventDay(calendar, R.drawable.ic_launcher_background));
-                                // Lưu ý: Bạn có thể thay icon dấu chấm bằng drawable khác (ví dụ R.drawable.ic_dot)
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }
-                        // Cập nhật lên giao diện lịch
                         calendarView.setEvents(events);
                     }
                 });
@@ -117,16 +101,13 @@ public class CalendarFragment extends Fragment {
         });
     }
 
-    // --- HIỂN THỊ CHI TIẾT KHI CHỌN NGÀY ---
     private void showTaskDetails(Calendar clickedDay) {
         StringBuilder info = new StringBuilder();
         SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String clickedDateStr = sdfDate.format(clickedDay.getTime());
-
         boolean hasTask = false;
 
         for (ScheduleModel item : scheduleList) {
-            // So sánh ngày click với ngày trong list (cắt chuỗi chỉ lấy yyyy-MM-dd)
             if (item.getScheduleDate().startsWith(clickedDateStr)) {
                 info.append("- Người trực: ").append(item.getPersonName()).append("\n")
                         .append("  Khu vực: ").append(item.getArea()).append("\n")
@@ -134,7 +115,6 @@ public class CalendarFragment extends Fragment {
                 hasTask = true;
             }
         }
-
         if (hasTask) {
             tvTaskInfo.setText(info.toString());
             tvTaskInfo.setTextColor(Color.BLACK);
@@ -144,13 +124,8 @@ public class CalendarFragment extends Fragment {
         }
     }
 
-    // --- DIALOG THÊM LỊCH (CHỈ GIÁO VIÊN MỚI DÙNG ĐC) ---
     private void showAddDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.layout_add_borrow, null);
-        // Tận dụng lại layout add_borrow hoặc tạo layout mới layout_add_schedule tùy bạn.
-        // Ở đây tôi demo dùng code Java tạo layout nhanh:
-
         android.widget.LinearLayout layout = new android.widget.LinearLayout(getContext());
         layout.setOrientation(android.widget.LinearLayout.VERTICAL);
         layout.setPadding(50, 40, 50, 40);
@@ -167,37 +142,28 @@ public class CalendarFragment extends Fragment {
         tvChonGio.setTextColor(Color.BLUE);
         layout.addView(tvChonGio);
 
-        // Biến lưu thời gian chọn
         final Calendar selectedCal = Calendar.getInstance();
-
         tvChonGio.setOnClickListener(v -> {
-            // Chọn ngày
             new DatePickerDialog(getContext(), (view, year, month, dayOfMonth) -> {
                 selectedCal.set(Calendar.YEAR, year);
                 selectedCal.set(Calendar.MONTH, month);
                 selectedCal.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-
-                // Chọn giờ
                 new TimePickerDialog(getContext(), (view1, hourOfDay, minute) -> {
                     selectedCal.set(Calendar.HOUR_OF_DAY, hourOfDay);
                     selectedCal.set(Calendar.MINUTE, minute);
-
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
                     tvChonGio.setText("Đã chọn: " + sdf.format(selectedCal.getTime()));
                 }, 8, 0, true).show();
-
             }, selectedCal.get(Calendar.YEAR), selectedCal.get(Calendar.MONTH), selectedCal.get(Calendar.DAY_OF_MONTH)).show();
         });
 
         builder.setView(layout);
         builder.setTitle("Thêm lịch trực nhật");
-
         builder.setPositiveButton("Lưu", (dialog, which) -> {
             String ma = etMaSV.getText().toString();
             String ten = etTenSV.getText().toString();
             String khuVuc = etKhuVuc.getText().toString();
             String ghiChu = etGhiChu.getText().toString();
-
             SimpleDateFormat sqlFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
             String timeStr = sqlFormat.format(selectedCal.getTime());
 
@@ -205,13 +171,12 @@ public class CalendarFragment extends Fragment {
                 Toast.makeText(getContext(), "Nhập thiếu thông tin!", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             JDBCService.insertCleaningSchedule(ma, ten, "Lớp", khuVuc, ghiChu, timeStr, success -> {
                 if(getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         if(success) {
                             Toast.makeText(getContext(), "Thêm lịch thành công!", Toast.LENGTH_SHORT).show();
-                            loadSchedulesFromDB(); // Load lại lịch
+                            loadSchedulesFromDB();
                         } else {
                             Toast.makeText(getContext(), "Lỗi khi thêm!", Toast.LENGTH_SHORT).show();
                         }
@@ -219,7 +184,6 @@ public class CalendarFragment extends Fragment {
                 }
             });
         });
-
         builder.setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss());
         builder.show();
     }
