@@ -1,118 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#FFFFFF"
-    android:padding="20dp">
+    android:layout_margin="20dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="24dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            android:gravity="center"
             android:text="PHÂN CÔNG TRỰC NHẬT"
-            android:textColor="#003366"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#005A9C"
+            android:gravity="center"
+            android:layout_marginBottom="20dp"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Mã Sinh Viên (Ấn kính lúp để tìm) *"
+            android:text="Mã Sinh Viên *"
             android:textStyle="bold"
-            android:textColor="#333"
             android:layout_marginBottom="5dp"/>
 
         <EditText
-            android:id="@+id/etSchStudentCode"
+            android:id="@+id/etDialogMaSV"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:layout_marginBottom="12dp"
             android:background="@drawable/bg_rounded_input"
             android:hint="VD: 2021600123"
-            android:padding="10dp"
-            android:inputType="text"
+            android:paddingStart="15dp"
             android:drawableEnd="@android:drawable/ic_menu_search"
-            android:drawableTint="#00BFFF"/>
+            android:paddingEnd="15dp"
+            android:textSize="14sp"
+            android:inputType="text"
+            android:layout_marginBottom="15dp"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Tên Sinh Viên *"
             android:textStyle="bold"
-            android:textColor="#333"
             android:layout_marginBottom="5dp"/>
+
         <EditText
-            android:id="@+id/etSchStudentName"
+            android:id="@+id/etDialogTenSV"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:layout_marginBottom="12dp"
             android:background="@drawable/bg_rounded_input"
             android:hint="Tự động điền..."
-            android:padding="10dp"
-            android:inputType="textPersonName" />
+            android:paddingStart="15dp"
+            android:textSize="14sp"
+            android:inputType="textPersonName"
+            android:layout_marginBottom="15dp"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Lớp"
             android:textStyle="bold"
-            android:textColor="#333"
             android:layout_marginBottom="5dp"/>
+
         <EditText
-            android:id="@+id/etSchClass"
+            android:id="@+id/etDialogLop"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:layout_marginBottom="12dp"
             android:background="@drawable/bg_rounded_input"
             android:hint="Tự động điền..."
-            android:padding="10dp"
-            android:inputType="textCapCharacters" />
+            android:paddingStart="15dp"
+            android:textSize="14sp"
+            android:inputType="text"
+            android:layout_marginBottom="15dp"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Thời gian thực hiện *"
             android:textStyle="bold"
-            android:textColor="#333"
             android:layout_marginBottom="5dp"/>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="15dp">
 
             <TextView
-                android:id="@+id/tvSchDate"
+                android:id="@+id/tvDialogChonNgay"
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="50dp"
+                android:layout_weight="1"
                 android:background="@drawable/bg_rounded_input"
+                android:text="Chọn Ngày"
                 android:gravity="center_vertical"
-                android:hint="Chọn Ngày"
-                android:paddingStart="10dp"
-                android:layout_marginEnd="8dp"
+                android:paddingStart="15dp"
                 android:drawableEnd="@android:drawable/ic_menu_my_calendar"
-                android:clickable="true"
-                android:focusable="false"/>
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="10dp"/>
 
             <TextView
-                android:id="@+id/tvSchTime"
+                android:id="@+id/tvDialogChonGio"
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="50dp"
+                android:layout_weight="1"
                 android:background="@drawable/bg_rounded_input"
+                android:text="Chọn Giờ"
                 android:gravity="center_vertical"
-                android:hint="Chọn Giờ"
-                android:paddingStart="10dp"
+                android:paddingStart="15dp"
                 android:drawableEnd="@android:drawable/ic_menu_recent_history"
-                android:clickable="true"
-                android:focusable="false"/>
+                android:paddingEnd="10dp"/>
         </LinearLayout>
 
         <TextView
@@ -120,46 +124,47 @@
             android:layout_height="wrap_content"
             android:text="Khu vực vệ sinh *"
             android:textStyle="bold"
-            android:textColor="#333"
             android:layout_marginBottom="5dp"/>
+
         <EditText
-            android:id="@+id/etSchArea"
+            android:id="@+id/etDialogKhuVuc"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:layout_marginBottom="12dp"
             android:background="@drawable/bg_rounded_input"
             android:hint="VD: Tầng 2 - Nhà A1"
-            android:padding="10dp"
-            android:inputType="text" />
+            android:paddingStart="15dp"
+            android:textSize="14sp"
+            android:inputType="text"
+            android:layout_marginBottom="15dp"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Ghi chú công việc"
             android:textStyle="bold"
-            android:textColor="#333"
             android:layout_marginBottom="5dp"/>
+
         <EditText
-            android:id="@+id/etSchNote"
+            android:id="@+id/etDialogGhiChu"
             android:layout_width="match_parent"
             android:layout_height="100dp"
-            android:layout_marginBottom="24dp"
             android:background="@drawable/bg_rounded_input"
             android:hint="Mô tả chi tiết công việc..."
             android:gravity="top|start"
-            android:padding="10dp"
+            android:padding="15dp"
+            android:textSize="14sp"
             android:inputType="textMultiLine"
-            android:minLines="3"/>
+            android:layout_marginBottom="25dp"/>
 
         <Button
-            android:id="@+id/btnSaveSchedule"
+            android:id="@+id/btnDialogLuu"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="60dp"
             android:text="LƯU LỊCH PHÂN CÔNG"
-            android:backgroundTint="#00BFFF"
-            android:textColor="#FFFFFF"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textSize="16sp"/>
+            android:textColor="@android:color/white"
+            android:backgroundTint="#00BFFF"/>
 
     </LinearLayout>
-</ScrollView>
+</androidx.cardview.widget.CardView>
